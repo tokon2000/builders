@@ -4,7 +4,7 @@ XRDP_TOP_SRC_PATH = ../../../../xrdp
 OBJS = fifo.o file.o os_calls.o list.o log.o thread_calls.o list16.o \
 pixman-region16.o ssl_calls.o trans.o
 
-CFLAGS = -Wall -O2 -fPIC -DHAVE_STDINT_H -DXRDP_LOG_PATH=\"/tmp\"
+CFLAGS = -Wall -O2 -fPIC -DHAVE_CONFIG_H -I..
 
 LDFLAGS = -ldl -lpthread -lssl
 

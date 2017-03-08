@@ -5,7 +5,7 @@ OBJS = libxrdp.o xrdp_rdp.o xrdp_sec.o xrdp_mcs.o xrdp_iso.o xrdp_orders.o \
 xrdp_orders_rail.o xrdp_fastpath.o xrdp_jpeg_compress.o xrdp_channel.o \
 xrdp_caps.o xrdp_bitmap_compress.o xrdp_bitmap32_compress.o xrdp_mppc_enc.o
 
-CFLAGS = -Wall -O2 -fPIC -DHAVE_STDINT_H -I$(XRDP_TOP_SRC_PATH)/common
+CFLAGS = -Wall -O2 -fPIC -DHAVE_CONFIG_H -I.. -I$(XRDP_TOP_SRC_PATH)/common
 
 LDFLAGS = -L../common -lcommon
 
