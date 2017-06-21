@@ -5,6 +5,57 @@ LIBDRM_CONFIG="--disable-radeon --disable-amdgpu --disable-nouveau --disable-vmw
 LIBVA_CONFIG="--disable-x11 --disable-wayland"
 LIBVA_INTER_DRIVER_CONFIG="--disable-x11 --disable-wayland"
 LIBYAMI_CONFIG="--disable-x11"
+SHOW_HELP=0
+ENABLE_X11=0
+GOT_PARAM=0
+
+for i in "$@"
+do
+case $i in
+    --prefix=*)
+    INSTALL_PATH="${i#*=}"
+    GOT_PARAM=1
+    shift # past argument=value
+    ;;
+    --enable-x11)
+    ENABLE_X11=1
+    GOT_PARAM=1
+    shift # past argument=value
+    ;;
+    --disable-x11)
+    ENABLE_X11=0
+    shift # past argument=value
+    ;;
+    *)
+          # unknown option
+    SHOW_HELP=1
+    ;;
+esac
+done
+
+if test $GOT_PARAM -eq 0
+then
+    SHOW_HELP=1
+fi
+
+if test $SHOW_HELP -ne 0
+then
+    echo "./buildyami.sh [--prefix=/opt/yami] [--enable-x11 | --disable-x11]"
+    exit 0
+fi
+
+if test $ENABLE_X11 -ne 0
+then
+    LIBVA_CONFIG="--enable-x11 --disable-wayland"
+    LIBVA_INTER_DRIVER_CONFIG="--enable-x11 --disable-wayland"
+    LIBYAMI_CONFIG="--enable-x11"
+fi
+
+echo "INSTALL_PATH              = $INSTALL_PATH"
+echo "LIBDRM_CONFIG             = $LIBDRM_CONFIG"
+echo "LIBVA_CONFIG              = $LIBVA_CONFIG"
+echo "LIBVA_INTER_DRIVER_CONFIG = $LIBVA_INTER_DRIVER_CONFIG"
+echo "LIBYAMI_CONFIG            = $LIBYAMI_CONFIG"
 
 export PKG_CONFIG_PATH=$INSTALL_PATH/lib/pkgconfig
 export NOCONFIGURE=1
@@ -119,7 +170,8 @@ cd libyami
 #git checkout infinte_gop
 #git checkout apache
 #git checkout fa3865a3406f9f21b729d5b6d46536a7e70eb391
-git checkout 1.1.0
+#git checkout 1.1.0
+git checkout 1.2.0
 ./autogen.sh
 ./configure --prefix=$INSTALL_PATH $LIBYAMI_CONFIG
 if test $? -ne 0
