@@ -124,6 +124,10 @@ then
   echo "error configure libva"
   exit 1
 fi
+# this will get rid of libva info logging
+echo "" >> config.h
+echo "#define va_log_info(buffer)" >> config.h
+echo "" >> config.h
 make
 if test $? -ne 0
 then
