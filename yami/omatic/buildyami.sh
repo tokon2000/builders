@@ -9,6 +9,10 @@ SHOW_HELP=0
 ENABLE_X11=0
 GOT_PARAM=0
 
+LIBDRM_SRC_NAME="libdrm-2.4.81"
+LIBVA_SRC_NAME="libva-1.8.2"
+LIBVA_INTER_DRIVER_SRC_NAME="intel-vaapi-driver-1.8.2"
+
 for i in "$@"
 do
 case $i in
@@ -62,66 +66,66 @@ export NOCONFIGURE=1
 
 rm -r $INSTALL_PATH/*
 
-rm -f libdrm-2.4.74.tar.gz
-#wget https://dri.freedesktop.org/libdrm/libdrm-2.4.74.tar.gz
-wget http://server1.xrdp.org/yami/libdrm-2.4.74.tar.gz
+rm -f $LIBDRM_SRC_NAME.tar.gz
+#wget https://dri.freedesktop.org/libdrm/$LIBDRM_SRC_NAME.tar.gz
+wget http://server1.xrdp.org/yami/$LIBDRM_SRC_NAME.tar.gz
 if test $? -ne 0
 then
-  echo "error downloading libdrm-2.4.74.tar.gz"
+  echo "error downloading $LIBDRM_SRC_NAME.tar.gz"
   exit 1
 fi
 
-rm -f libva-1.7.3.tar.bz2
-rm -f libva-1.7.3.tar
-#wget https://www.freedesktop.org/software/vaapi/releases/libva/libva-1.7.3.tar.bz2
-wget http://server1.xrdp.org/yami/libva-1.7.3.tar.bz2
+rm -f $LIBVA_SRC_NAME.tar.bz2
+rm -f $LIBVA_SRC_NAME.tar
+#wget https://www.freedesktop.org/software/vaapi/releases/libva/$LIBVA_SRC_NAME.tar.bz2
+wget http://server1.xrdp.org/yami/$LIBVA_SRC_NAME.tar.bz2
 if test $? -ne 0
 then
-  echo "error downloading libva-1.7.3.tar.bz2"
+  echo "error downloading $LIBVA_SRC_NAME.tar.bz2"
   exit 1
 fi
 
-rm -f libva-intel-driver-1.7.3.tar.bz2
-rm -f libva-intel-driver-1.7.3.tar
-#wget https://www.freedesktop.org/software/vaapi/releases/libva-intel-driver/libva-intel-driver-1.7.3.tar.bz2
-wget http://server1.xrdp.org/yami/libva-intel-driver-1.7.3.tar.bz2
+rm -f $LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2
+rm -f $LIBVA_INTER_DRIVER_SRC_NAME.tar
+#wget https://www.freedesktop.org/software/vaapi/releases/libva-intel-driver/$LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2
+wget http://server1.xrdp.org/yami/$LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2
 if test $? -ne 0
 then
-  echo "error downloading libva-intel-driver-1.7.3.tar.bz2"
+  echo "error downloading $LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2"
   exit 1
 fi
 
-rm -fr libdrm-2.4.74
-tar -zxf libdrm-2.4.74.tar.gz
-cd libdrm-2.4.74
+rm -fr $LIBDRM_SRC_NAME
+tar -zxf $LIBDRM_SRC_NAME.tar.gz
+cd $LIBDRM_SRC_NAME
 ./configure --prefix=$INSTALL_PATH $LIBDRM_CONFIG
 if test $? -ne 0
 then
-  echo "error configure libdrm"
+  echo "error configure $LIBDRM_SRC_NAME"
   exit 1
 fi
 make
 if test $? -ne 0
 then
-  echo "error make libdrm"
+  echo "error make $LIBDRM_SRC_NAME"
   exit 1
 fi
 make install-strip
 if test $? -ne 0
 then
-  echo "error make install libdrm"
+  echo "error make install $LIBDRM_SRC_NAME"
   exit 1
 fi
 cd ..
 
-rm -fr libva-1.7.3
-bunzip2 libva-1.7.3.tar.bz2
-tar -xf libva-1.7.3.tar
-cd libva-1.7.3
+rm -fr $LIBVA_SRC_NAME
+bunzip2 -k $LIBVA_SRC_NAME.tar.bz2
+tar -xf $LIBVA_SRC_NAME.tar
+cd $LIBVA_SRC_NAME
 ./configure --prefix=$INSTALL_PATH $LIBVA_CONFIG
 if test $? -ne 0
 then
-  echo "error configure libva"
+  echo "error configure $LIBVA_SRC_NAME"
   exit 1
 fi
 # this will get rid of libva info logging
@@ -131,37 +135,37 @@ echo "" >> config.h
 make
 if test $? -ne 0
 then
-  echo "error make libva"
+  echo "error make $LIBVA_SRC_NAME"
   exit 1
 fi
 make install-strip
 if test $? -ne 0
 then
-  echo "error make install libva"
+  echo "error make install $LIBVA_SRC_NAME"
   exit 1
 fi
 cd ..
 
-rm -rf libva-intel-driver-1.7.3
-bunzip2 libva-intel-driver-1.7.3.tar.bz2
-tar -xf libva-intel-driver-1.7.3.tar
-cd libva-intel-driver-1.7.3
+rm -rf $LIBVA_INTER_DRIVER_SRC_NAME
+bunzip2 -k $LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2
+tar -xf $LIBVA_INTER_DRIVER_SRC_NAME.tar
+cd $LIBVA_INTER_DRIVER_SRC_NAME
 ./configure --prefix=$INSTALL_PATH $LIBVA_INTER_DRIVER_CONFIG
 if test $? -ne 0
 then
-  echo "error configure libva-intel-driver"
+  echo "error configure $LIBVA_INTER_DRIVER_SRC_NAME"
   exit 1
 fi
 make
 if test $? -ne 0
 then
-  echo "error make libva-intel-driver"
+  echo "error make $LIBVA_INTER_DRIVER_SRC_NAME"
   exit 1
 fi
 make install-strip
 if test $? -ne 0
 then
-  echo "error make install libva-intel-driver"
+  echo "error make install $LIBVA_INTER_DRIVER_SRC_NAME"
   exit 1
 fi
 cd ..
