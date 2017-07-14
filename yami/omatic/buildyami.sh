@@ -150,6 +150,8 @@ rm -rf $LIBVA_INTER_DRIVER_SRC_NAME
 bunzip2 -k $LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2
 tar -xf $LIBVA_INTER_DRIVER_SRC_NAME.tar
 cd $LIBVA_INTER_DRIVER_SRC_NAME
+echo "patching $LIBVA_INTER_DRIVER_SRC_NAME"
+patch -p1 < ../0001-Encoder-Avoid-memory-leak.patch
 ./configure --prefix=$INSTALL_PATH $LIBVA_INTER_DRIVER_CONFIG
 if test $? -ne 0
 then
