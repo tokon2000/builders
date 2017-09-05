@@ -3,6 +3,7 @@
 INSTALL_PATH=/opt/yami
 LIBDRM_CONFIG="--disable-radeon --disable-amdgpu --disable-nouveau --disable-vmwgfx --disable-libkms"
 LIBVA_CONFIG="--disable-x11 --disable-wayland"
+LIBVAUTILS_CONFIG="--disable-x11"
 LIBVA_INTER_DRIVER_CONFIG="--disable-x11 --disable-wayland"
 LIBYAMI_CONFIG="--disable-x11"
 SHOW_HELP=0
@@ -11,6 +12,7 @@ GOT_PARAM=0
 
 LIBDRM_SRC_NAME="libdrm-2.4.81"
 LIBVA_SRC_NAME="libva-1.8.2"
+LIBVAUTILS_SRC_NAME="libva-utils-1.8.2"
 LIBVA_INTER_DRIVER_SRC_NAME="intel-vaapi-driver-1.8.2"
 
 for i in "$@"
@@ -51,6 +53,7 @@ fi
 if test $ENABLE_X11 -ne 0
 then
     LIBVA_CONFIG="--enable-x11 --disable-wayland"
+    LIBVAUTILS_CONFIG="--enable-x11 --disable-wayland"
     LIBVA_INTER_DRIVER_CONFIG="--enable-x11 --disable-wayland"
     LIBYAMI_CONFIG="--enable-x11"
 fi
@@ -58,6 +61,7 @@ fi
 echo "INSTALL_PATH              = $INSTALL_PATH"
 echo "LIBDRM_CONFIG             = $LIBDRM_CONFIG"
 echo "LIBVA_CONFIG              = $LIBVA_CONFIG"
+echo "LIBVAUTILS_CONFIG         = $LIBVAUTILS_CONFIG"
 echo "LIBVA_INTER_DRIVER_CONFIG = $LIBVA_INTER_DRIVER_CONFIG"
 echo "LIBYAMI_CONFIG            = $LIBYAMI_CONFIG"
 
@@ -82,6 +86,16 @@ wget http://server1.xrdp.org/yami/$LIBVA_SRC_NAME.tar.bz2
 if test $? -ne 0
 then
   echo "error downloading $LIBVA_SRC_NAME.tar.bz2"
+  exit 1
+fi
+
+rm -f $LIBVAUTILS_SRC_NAME.tar.bz2
+rm -f $LIBVAUTILS_SRC_NAME.tar
+#wget https://www.freedesktop.org/software/vaapi/releases/libva/$LIBVAUTILS_SRC_NAME.tar.bz2
+wget http://server1.xrdp.org/yami/$LIBVAUTILS_SRC_NAME.tar.bz2
+if test $? -ne 0
+then
+  echo "error downloading $LIBVAUTILS_SRC_NAME.tar.bz2"
   exit 1
 fi
 
@@ -142,6 +156,30 @@ make install-strip
 if test $? -ne 0
 then
   echo "error make install $LIBVA_SRC_NAME"
+  exit 1
+fi
+cd ..
+
+rm -fr $LIBVAUTILS_SRC_NAME
+bunzip2 -k $LIBVAUTILS_SRC_NAME.tar.bz2
+tar -xf $LIBVAUTILS_SRC_NAME.tar
+cd $LIBVAUTILS_SRC_NAME
+./configure --prefix=$INSTALL_PATH $LIBVAUTILS_CONFIG
+if test $? -ne 0
+then
+  echo "error configure $LIBVAUTILS_SRC_NAME"
+  exit 1
+fi
+make
+if test $? -ne 0
+then
+  echo "error make $LIBVAUTILS_SRC_NAME"
+  exit 1
+fi
+make install-strip
+if test $? -ne 0
+then
+  echo "error make install $LIBVAUTILS_SRC_NAME"
   exit 1
 fi
 cd ..
