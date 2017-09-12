@@ -3,7 +3,7 @@
 INSTALL_PATH=/opt/yami
 LIBDRM_CONFIG="--disable-radeon --disable-amdgpu --disable-nouveau --disable-vmwgfx --disable-libkms"
 LIBVA_CONFIG="--disable-x11 --disable-wayland"
-LIBVAUTILS_CONFIG="--disable-x11"
+LIBVAUTILS_CONFIG="--disable-x11 --disable-wayland"
 LIBVA_INTER_DRIVER_CONFIG="--disable-x11 --disable-wayland"
 LIBYAMI_CONFIG="--disable-x11"
 SHOW_HELP=0
