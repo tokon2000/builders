@@ -2,7 +2,7 @@
 XRDP_TOP_SRC_PATH = ../../../../xrdp
 
 OBJS = fifo.o file.o os_calls.o list.o log.o thread_calls.o list16.o \
-pixman-region16.o ssl_calls.o trans.o
+pixman-region16.o ssl_calls.o trans.o base64.o
 
 CFLAGS = -Wall -O2 -fPIC -DHAVE_CONFIG_H -I..
 
@@ -43,4 +43,7 @@ ssl_calls.o: $(XRDP_TOP_SRC_PATH)/common/ssl_calls.c
 
 trans.o: $(XRDP_TOP_SRC_PATH)/common/trans.c
 	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/trans.c
+
+base64.o: $(XRDP_TOP_SRC_PATH)/common/base64.c
+	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/base64.c
 
