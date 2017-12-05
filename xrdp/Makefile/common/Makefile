@@ -14,36 +14,6 @@ libcommon.so: $(OBJS)
 clean:
 	rm -f xrdp-common.so $(OBJS)
 
-fifo.o: $(XRDP_TOP_SRC_PATH)/common/fifo.c
-	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/fifo.c
-
-file.o: $(XRDP_TOP_SRC_PATH)/common/file.c
-	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/file.c
-
-list.o: $(XRDP_TOP_SRC_PATH)/common/list.c
-	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/list.c
-
-log.o: $(XRDP_TOP_SRC_PATH)/common/log.c
-	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/log.c
-
-os_calls.o: $(XRDP_TOP_SRC_PATH)/common/os_calls.c
-	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/os_calls.c
-
-thread_calls.o: $(XRDP_TOP_SRC_PATH)/common/thread_calls.c
-	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/thread_calls.c
-
-list16.o: $(XRDP_TOP_SRC_PATH)/common/list16.c
-	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/list16.c
-
-pixman-region16.o: $(XRDP_TOP_SRC_PATH)/common/pixman-region16.c
-	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/pixman-region16.c
-
-ssl_calls.o: $(XRDP_TOP_SRC_PATH)/common/ssl_calls.c
-	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/ssl_calls.c
-
-trans.o: $(XRDP_TOP_SRC_PATH)/common/trans.c
-	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/trans.c
-
-base64.o: $(XRDP_TOP_SRC_PATH)/common/base64.c
-	$(CC) $(CFLAGS) -c $(XRDP_TOP_SRC_PATH)/common/base64.c
+%.o: $(XRDP_TOP_SRC_PATH)/common/%.c
+	$(CC) $(CFLAGS) -c $^
 
