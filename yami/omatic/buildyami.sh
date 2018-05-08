@@ -5,7 +5,7 @@ LIBDRM_CONFIG="--disable-radeon --disable-amdgpu --disable-nouveau --disable-vmw
 LIBVA_CONFIG="--disable-x11 --disable-wayland"
 LIBVAUTILS_CONFIG="--disable-x11 --disable-wayland"
 LIBVA_INTER_DRIVER_CONFIG="--disable-x11 --disable-wayland"
-LIBYAMI_CONFIG="--disable-x11"
+LIBYAMI_CONFIG="--disable-jpegdec --disable-vp8dec --disable-h265dec --enable-capi --disable-x11"
 SHOW_HELP=0
 ENABLE_X11=0
 GOT_PARAM=0
@@ -55,7 +55,7 @@ then
     LIBVA_CONFIG="--enable-x11 --disable-wayland"
     LIBVAUTILS_CONFIG="--enable-x11 --disable-wayland"
     LIBVA_INTER_DRIVER_CONFIG="--enable-x11 --disable-wayland"
-    LIBYAMI_CONFIG="--enable-x11"
+    LIBYAMI_CONFIG="--disable-jpegdec --disable-vp8dec --disable-h265dec --enable-capi --enable-x11"
 fi
 
 echo "INSTALL_PATH              = $INSTALL_PATH"
@@ -225,8 +225,10 @@ cd libyami
 #git checkout fa3865a3406f9f21b729d5b6d46536a7e70eb391
 #git checkout 1.1.0
 git checkout 1.2.0
+#git checkout 1.3.0
+#git checkout libyami-0.3.1
 ./autogen.sh
-./configure --prefix=$INSTALL_PATH $LIBYAMI_CONFIG
+CFLAGS="-O2 -Wall" CXXFLAGS="-O2 -Wall" ./configure --prefix=$INSTALL_PATH $LIBYAMI_CONFIG
 if test $? -ne 0
 then
   echo "error configure libyami"
