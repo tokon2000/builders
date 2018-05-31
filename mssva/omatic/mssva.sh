@@ -3,12 +3,19 @@
 INSTALL_PATH=/opt/mssva
 LIBDRM_CONFIG="--disable-radeon --disable-amdgpu --disable-nouveau --disable-vmwgfx --disable-libkms"
 LIBVA_CONFIG="--disable-x11 --disable-wayland"
+LIBVAUTILS_CONFIG="--disable-x11 --disable-wayland"
 SHOW_HELP=0
 ENABLE_X11=0
 GOT_PARAM=0
 
-LIBDRM_SRC_NAME="libdrm-2.4.66"
-LIBVA_SRC_NAME="libva-1.67.0.pre1"
+# MediaServerStudioEssentials2017
+#LIBDRM_SRC_NAME="libdrm-2.4.66"
+#LIBVA_SRC_NAME="libva-1.67.0.pre1"
+
+# MediaServerStudioEssentials2018R1
+LIBDRM_SRC_NAME="libdrm-2.4.74"
+LIBVA_SRC_NAME="libva-2.0.1.pre1"
+LIBVAUTILS_SRC_NAME="libva-utils-2.0.0"
 
 for i in "$@"
 do
@@ -77,6 +84,15 @@ then
   exit 1
 fi
 
+rm -f $LIBVAUTILS_SRC_NAME.tar.bz2
+rm -f $LIBVAUTILS_SRC_NAME.tar
+wget http://server1.xrdp.org/yami/$LIBVAUTILS_SRC_NAME.tar.bz2
+if test $? -ne 0
+then
+  echo "error downloading $LIBVAUTILS_SRC_NAME.tar.bz2"
+  exit 1
+fi
+
 echo "rm -fr $LIBDRM_SRC_NAME"
 rm -fr $LIBDRM_SRC_NAME
 echo "bunzip2 -k $LIBDRM_SRC_NAME.tar.bz2"
@@ -128,6 +144,30 @@ make install-strip
 if test $? -ne 0
 then
   echo "error make install $LIBVA_SRC_NAME"
+  exit 1
+fi
+cd ..
+
+rm -fr $LIBVAUTILS_SRC_NAME
+bunzip2 -k $LIBVAUTILS_SRC_NAME.tar.bz2
+tar -xf $LIBVAUTILS_SRC_NAME.tar
+cd $LIBVAUTILS_SRC_NAME
+./configure --prefix=$INSTALL_PATH $LIBVAUTILS_CONFIG
+if test $? -ne 0
+then
+  echo "error configure $LIBVAUTILS_SRC_NAME"
+  exit 1
+fi
+make
+if test $? -ne 0
+then
+  echo "error make $LIBVAUTILS_SRC_NAME"
+  exit 1
+fi
+make install-strip
+if test $? -ne 0
+then
+  echo "error make install $LIBVAUTILS_SRC_NAME"
   exit 1
 fi
 cd ..
