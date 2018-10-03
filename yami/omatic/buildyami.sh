@@ -216,7 +216,9 @@ fi
 cd ..
 
 rm -rf libyami
-git clone https://github.com/01org/libyami.git
+git clone https://github.com/intel/libyami.git
+#git clone https://github.com/01org/libyami.git
+#git clone https://github.com/xuguangxin/libyami.git
 #git clone https://github.com/jsorg71/libyami.git
 #git clone https://github.com/lizhong1008/libyami.git
 cd libyami
@@ -224,9 +226,11 @@ cd libyami
 #git checkout apache
 #git checkout fa3865a3406f9f21b729d5b6d46536a7e70eb391
 #git checkout 1.1.0
-git checkout 1.2.0
+#git checkout 1.2.0
 #git checkout 1.3.0
+git checkout 1.3.1
 #git checkout libyami-0.3.1
+#git checkout fix_low_latency
 ./autogen.sh
 CFLAGS="-O2 -Wall" CXXFLAGS="-O2 -Wall" ./configure --prefix=$INSTALL_PATH $LIBYAMI_CONFIG
 if test $? -ne 0
