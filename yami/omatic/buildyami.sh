@@ -10,10 +10,10 @@ SHOW_HELP=0
 ENABLE_X11=0
 GOT_PARAM=0
 
-LIBDRM_SRC_NAME="libdrm-2.4.81"
-LIBVA_SRC_NAME="libva-1.8.2"
-LIBVAUTILS_SRC_NAME="libva-utils-1.8.2"
-LIBVA_INTER_DRIVER_SRC_NAME="intel-vaapi-driver-1.8.2"
+LIBDRM_SRC_NAME="libdrm-2.4.91"
+LIBVA_SRC_NAME="libva-2.3.0"
+LIBVAUTILS_SRC_NAME="libva-utils-2.2.0"
+LIBVA_INTER_DRIVER_SRC_NAME="intel-vaapi-driver-2.3.0"
 
 for i in "$@"
 do
@@ -82,6 +82,7 @@ fi
 rm -f $LIBVA_SRC_NAME.tar.bz2
 rm -f $LIBVA_SRC_NAME.tar
 #wget https://www.freedesktop.org/software/vaapi/releases/libva/$LIBVA_SRC_NAME.tar.bz2
+#wget https://github.com/01org/libva/releases/download/2.3.0/$LIBVA_SRC_NAME.tar.bz2
 wget http://server1.xrdp.org/yami/$LIBVA_SRC_NAME.tar.bz2
 if test $? -ne 0
 then
@@ -92,6 +93,7 @@ fi
 rm -f $LIBVAUTILS_SRC_NAME.tar.bz2
 rm -f $LIBVAUTILS_SRC_NAME.tar
 #wget https://www.freedesktop.org/software/vaapi/releases/libva/$LIBVAUTILS_SRC_NAME.tar.bz2
+#wget https://github.com/intel/libva-utils/releases/download/2.2.0/$LIBVAUTILS_SRC_NAME.tar.bz2
 wget http://server1.xrdp.org/yami/$LIBVAUTILS_SRC_NAME.tar.bz2
 if test $? -ne 0
 then
@@ -102,6 +104,7 @@ fi
 rm -f $LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2
 rm -f $LIBVA_INTER_DRIVER_SRC_NAME.tar
 #wget https://www.freedesktop.org/software/vaapi/releases/libva-intel-driver/$LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2
+#wget https://github.com/intel/intel-vaapi-driver/releases/download/2.3.0/$LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2
 wget http://server1.xrdp.org/yami/$LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2
 if test $? -ne 0
 then
@@ -188,13 +191,6 @@ rm -rf $LIBVA_INTER_DRIVER_SRC_NAME
 bunzip2 -k $LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2
 tar -xf $LIBVA_INTER_DRIVER_SRC_NAME.tar
 cd $LIBVA_INTER_DRIVER_SRC_NAME
-echo "patching $LIBVA_INTER_DRIVER_SRC_NAME"
-patch -p1 < ../0001-Encoder-Avoid-memory-leak.patch
-if test $? -ne 0
-then
-  echo "patching $LIBVA_INTER_DRIVER_SRC_NAME failed"
-  exit 1
-fi
 ./configure --prefix=$INSTALL_PATH $LIBVA_INTER_DRIVER_CONFIG
 if test $? -ne 0
 then
