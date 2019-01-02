@@ -191,6 +191,13 @@ rm -rf $LIBVA_INTER_DRIVER_SRC_NAME
 bunzip2 -k $LIBVA_INTER_DRIVER_SRC_NAME.tar.bz2
 tar -xf $LIBVA_INTER_DRIVER_SRC_NAME.tar
 cd $LIBVA_INTER_DRIVER_SRC_NAME
+echo "patching $LIBVA_INTER_DRIVER_SRC_NAME"
+patch -p1 < ../0002-RGB-YUV-fix.patch
+if test $? -ne 0
+then
+  echo "patching $LIBVA_INTER_DRIVER_SRC_NAME failed"
+  exit 1
+fi
 ./configure --prefix=$INSTALL_PATH $LIBVA_INTER_DRIVER_CONFIG
 if test $? -ne 0
 then
