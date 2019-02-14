@@ -65,7 +65,7 @@ yami_init(int type, void *display)
     uint32_t yami_version;
     VAStatus va_status;
 #if defined(YAMI_INF_X11)
-    Display *dpy
+    Display *dpy;
 #endif
 
     if (type == 1) /* drm */

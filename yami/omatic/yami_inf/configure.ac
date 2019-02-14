@@ -11,16 +11,16 @@ AC_PROG_LIBTOOL
 
 AC_ARG_ENABLE(x11, AS_HELP_STRING([--enable-x11],
               [Build va_x11 (default: no)]),
-              [], [enable_vax11=no])
-AM_CONDITIONAL(YAMI_INF_X11, [test x$enable_vax11 = xyes])
+              [], [enable-x11=no])
+AM_CONDITIONAL(YAMI_INF_X11, [test x$enable_x11 = xyes])
 
 PKG_CHECK_MODULES([LIBVA], [libva >= 1.3.0], [], [AC_MSG_ERROR([can not find libva])])
 PKG_CHECK_MODULES([LIBYAMI], [libyami >= 0.3.0], [], [AC_MSG_ERROR([can not find libyami])])
 
 # checking for libva_x11
-if test "x$enable_vax11" = "xyes"
+if test "x$enable_x11" = "xyes"
 then
-    PKG_CHECK_MODULES([LIBVAX11], [libva_x11 >= 1.3.0], [], [AC_MSG_ERROR([can not find libva_x11])])
+    PKG_CHECK_MODULES([LIBVAX11], [libva-x11 >= 1.3.0], [], [AC_MSG_ERROR([can not find libva-x11])])
 fi
 
 AM_CONDITIONAL(GOT_PREFIX, test "x${prefix}" != "xNONE"])
