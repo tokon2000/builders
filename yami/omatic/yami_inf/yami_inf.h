@@ -1,9 +1,35 @@
 
-#ifndef __YAMI_INF_H__
+#if !defined( __YAMI_INF_H__)
 #define __YAMI_INF_H__ 1
 
-#define YAMI_INF_MAJOR 0
-#define YAMI_INF_MINOR 1
+#define YI_MAJOR                        0
+#define YI_MINOR                        1
+
+#define YI_SUCCESS                      0
+#define YI_ERROR_MEMORY                 1
+#define YI_ERROR_UNIMP                  2
+#define YI_ERROR_TYPE                   3
+#define YI_ERROR_VAINITIALIZE           4
+#define YI_ERROR_VACREATECONFIG         5
+#define YI_ERROR_VACREATECONTEXT        6
+#define YI_ERROR_VACREATESURFACES       7
+#define YI_ERROR_VACREATEIMAGE          8
+#define YI_ERROR_VAMAPBUFFER            9
+#define YI_ERROR_VAUNMAPBUFFER          10
+#define YI_ERROR_VAPUTIMAGE             11
+#define YI_ERROR_VASYNCSURFACE          12
+#define YI_ERROR_CREATEENCODER          20
+#define YI_ERROR_ENCODEGETPARAMETERS    21
+#define YI_ERROR_ENCODESETPARAMETERS    22
+#define YI_ERROR_ENCODESTART            23
+#define YI_ERROR_ENCODEENCODE           24
+#define YI_ERROR_ENCODEGETOUTPUT        25
+
+#define YI_TYPE_H264                    1
+
+#define YI_H264_ENC_FLAGS_PROFILE_MASK  0x0000000F
+#define YI_H264_ENC_FLAGS_PROFILE_MAIN  (1 << 0)
+#define YI_H264_ENC_FLAGS_PROFILE_HIGH  (2 << 0)
 
 int
 yami_get_version(int *version);
