@@ -68,12 +68,12 @@ yami_init(int type, void *display)
     Display *dpy;
 #endif
 
-    if (type == 1) /* drm */
+    if (type == YI_TYPE_DRM)
     {
         fd = (int) (size_t) display;
         g_va_display = vaGetDisplayDRM(fd);
     }
-    else if (type == 2) /* x11 */
+    else if (type == YI_TYPE_X11)
     {
 #if defined(YAMI_INF_X11)
         dpy = (Display *) display;
@@ -553,21 +553,93 @@ yami_encoder_encode(void *obj, void *cdata, int *cdata_max_bytes)
 int
 yami_decoder_create(void **obj, int width, int height, int type, int flags)
 {
-    return 0;
+    struct yami_inf_dec_priv *dec;
+    NativeDisplay nd;
+    VideoConfigBuffer cb;
+
+    dec = (struct yami_inf_dec_priv *)
+          calloc(1, sizeof(struct yami_inf_dec_priv));
+    if (dec == NULL)
+    {
+        return YI_ERROR_MEMORY;
+    }
+    if (type == YI_TYPE_H264)
+    {
+        dec->decoder = createDecoder(YAMI_MIME_H264);
+        if (dec->decoder == NULL)
+        {
+            free(dec);
+            return YI_ERROR_CREATEDECODER;
+        }
+    }
+    else
+    {
+        free(dec);
+        return YI_ERROR_UNIMP;
+    }
+    memset(&nd, 0, sizeof(nd));
+    nd.type = NATIVE_DISPLAY_VA;
+    nd.handle = (long) g_va_display;
+    decodeSetNativeDisplay(dec->decoder, &nd);
+    memset(&cb, 0, sizeof(cb));
+    cb.profile = VAProfileNone;
+    if ((type == YI_TYPE_H264) && (flags & YI_H264_DEC_FLAG_LOWLATENCY))
+    {
+        cb.enableLowLatency = 1;
+    }
+    if (decodeStart(dec->decoder, &cb) != YAMI_SUCCESS)
+    {
+        releaseDecoder(dec->decoder);
+        free(dec);
+        return YI_ERROR_CREATEDECODER;
+    }
+    dec->width = width;
+    dec->height = height;
+    *obj = dec;
+    return YI_SUCCESS;
 }
 
 /*****************************************************************************/
 int
 yami_decoder_delete(void *obj)
 {
-    return 0;
+    struct yami_inf_dec_priv *dec;
+
+    dec = (struct yami_inf_dec_priv *) obj;
+    if (dec == NULL)
+    {
+        return YI_SUCCESS;
+    }
+    releaseDecoder(dec->decoder);
+    free(dec);
+    return YI_SUCCESS;
 }
 
 /*****************************************************************************/
 int
 yami_decoder_decode(void *obj, void *cdata, int cdata_bytes)
 {
-    return 0;
+    struct yami_inf_dec_priv *dec;
+    YamiStatus yami_status;
+    VideoDecodeBuffer ib;
+    const VideoFormatInfo *fi;
+
+    dec = (struct yami_inf_dec_priv *) obj;
+    memset(&ib, 0, sizeof(ib));
+    ib.data = cdata;
+    ib.size = cdata_bytes;
+    ib.flag = VIDEO_DECODE_BUFFER_FLAG_FRAME_END;
+    yami_status = decodeDecode(dec->decoder, &ib);
+    if (yami_status == YAMI_DECODE_FORMAT_CHANGE)
+    {
+        fi = decodeGetFormatInfo(dec->decoder);
+        yami_status = decodeDecode(dec->decoder, &ib);
+    }
+    if (yami_status != DECODE_SUCCESS)
+    {
+        return YI_ERROR_DECODEDECODE;
+    }
+    return YI_SUCCESS;
 }
 
 /*****************************************************************************/
@@ -575,5 +647,31 @@ int
 yami_decoder_get_pixmap(void *obj, void* display,
                         int width, int height, int *pixmap)
 {
-    return 0;
+#if defined(YAMI_INF_X11)
+    struct yami_inf_dec_priv *dec;
+    VideoFrame *vf;
+    VAStatus va_status;
+
+    dec = (struct yami_inf_dec_priv *) obj;
+    vf = decodeGetOutput(dec->decoder);
+    if (vf == NULL)
+    {
+        return YI_ERROR_DECODEGETOUTPUT;
+    }
+    if (vf->surface == 0)
+    {
+        return YI_ERROR_DECODEGETOUTPUT;
+    }
+    va_status = vaPutSurface(g_va_display, vf->surface, pixmap,
+                             0, 0, dec->width, dec->height,
+                             0, 0, width, height,
+                             0, 0, 0);
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        return YI_ERROR_VAPUTSURFACE;
+    }
+    return YI_SUCCESS;
+#else
+    return YI_ERROR_UNIMP;
+#endif
 }

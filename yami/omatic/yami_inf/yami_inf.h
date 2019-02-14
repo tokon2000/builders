@@ -18,18 +18,28 @@
 #define YI_ERROR_VAUNMAPBUFFER          10
 #define YI_ERROR_VAPUTIMAGE             11
 #define YI_ERROR_VASYNCSURFACE          12
-#define YI_ERROR_CREATEENCODER          20
-#define YI_ERROR_ENCODEGETPARAMETERS    21
-#define YI_ERROR_ENCODESETPARAMETERS    22
-#define YI_ERROR_ENCODESTART            23
-#define YI_ERROR_ENCODEENCODE           24
-#define YI_ERROR_ENCODEGETOUTPUT        25
+#define YI_ERROR_VAPUTSURFACE           13
+#define YI_ERROR_CREATEENCODER          100
+#define YI_ERROR_ENCODEGETPARAMETERS    101
+#define YI_ERROR_ENCODESETPARAMETERS    102
+#define YI_ERROR_ENCODESTART            103
+#define YI_ERROR_ENCODEENCODE           104
+#define YI_ERROR_ENCODEGETOUTPUT        105
+#define YI_ERROR_CREATEDECODER          200
+#define YI_ERROR_DECODESTART            201
+#define YI_ERROR_DECODEDECODE           202
+#define YI_ERROR_DECODEGETOUTPUT        203
 
 #define YI_TYPE_H264                    1
 
 #define YI_H264_ENC_FLAGS_PROFILE_MASK  0x0000000F
 #define YI_H264_ENC_FLAGS_PROFILE_MAIN  (1 << 0)
 #define YI_H264_ENC_FLAGS_PROFILE_HIGH  (2 << 0)
+
+#define YI_TYPE_DRM                     1
+#define YI_TYPE_X11                     2
+
+#define YI_H264_DEC_FLAG_LOWLATENCY     1
 
 int
 yami_get_version(int *version);
