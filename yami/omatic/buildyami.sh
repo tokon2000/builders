@@ -15,6 +15,8 @@ LIBVA_SRC_NAME="libva-2.3.0"
 LIBVAUTILS_SRC_NAME="libva-utils-2.2.0"
 LIBVA_INTER_DRIVER_SRC_NAME="intel-vaapi-driver-2.3.0"
 
+LIBYAMI_INF_CONFIG=
+
 for i in "$@"
 do
 case $i in
@@ -56,6 +58,7 @@ then
     LIBVAUTILS_CONFIG="--enable-x11 --disable-wayland"
     LIBVA_INTER_DRIVER_CONFIG="--enable-x11 --disable-wayland"
     LIBYAMI_CONFIG="--disable-jpegdec --disable-vp8dec --disable-h265dec --enable-capi --enable-x11"
+    LIBYAMI_INF_CONFIG="--enable-x11"
 fi
 
 echo "INSTALL_PATH              = $INSTALL_PATH"
@@ -252,6 +255,28 @@ make install-strip
 if test $? -ne 0
 then
   echo "error make install libyami"
+  exit 1
+fi
+cd ..
+
+cd yami_inf
+./bootstrap
+if test $? -ne 0
+then
+  echo "error bootstrap yami_inf"
+  exit 1
+fi
+./configure --prefix=$INSTALL_PATH $LIBYAMI_INF_CONFIG
+if test $? -ne 0
+then
+  echo "error configure yami_inf"
+  exit 1
+fi
+make clean
+make
+if test $? -ne 0
+then
+  echo "error make yami_inf"
   exit 1
 fi
 cd ..
