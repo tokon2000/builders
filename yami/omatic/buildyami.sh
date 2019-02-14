@@ -279,5 +279,11 @@ then
   echo "error make yami_inf"
   exit 1
 fi
+make install-strip
+if test $? -ne 0
+then
+  echo "error make install yami_inf"
+  exit 1
+fi
 cd ..
 
