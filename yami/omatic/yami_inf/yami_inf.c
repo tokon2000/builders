@@ -45,6 +45,10 @@ struct yami_inf_dec_priv
     int height;
     int type;
     int flags;
+    int pixmap;
+    int pixmap_width;
+    int pixmap_height;
+    void *display;
 };
 
 /*****************************************************************************/
@@ -610,6 +614,12 @@ yami_decoder_delete(void *obj)
     {
         return YI_SUCCESS;
     }
+    if (dec->pixmap != 0)
+    {
+#if defined(YAMI_INF_X11)
+        XFreePixmap((Display *) (dec->display), (Pixmap) (dec->pixmap));
+#endif
+    }
     releaseDecoder(dec->decoder);
     free(dec);
     return YI_SUCCESS;
@@ -633,6 +643,10 @@ yami_decoder_decode(void *obj, void *cdata, int cdata_bytes)
     if (yami_status == YAMI_DECODE_FORMAT_CHANGE)
     {
         fi = decodeGetFormatInfo(dec->decoder);
+        if (fi == NULL)
+        {
+            return YI_ERROR_DECODEGETFORMATINFO;
+        }
         yami_status = decodeDecode(dec->decoder, &ib);
     }
     if (yami_status != DECODE_SUCCESS)
@@ -651,6 +665,9 @@ yami_decoder_get_pixmap(void *obj, void* display,
     struct yami_inf_dec_priv *dec;
     VideoFrame *vf;
     VAStatus va_status;
+    Display *dpy;
+    int depth;
+    Window root_window;
 
     dec = (struct yami_inf_dec_priv *) obj;
     vf = decodeGetOutput(dec->decoder);
@@ -660,16 +677,37 @@ yami_decoder_get_pixmap(void *obj, void* display,
     }
     if (vf->surface == 0)
     {
+        vf->free(vf);
         return YI_ERROR_DECODEGETOUTPUT;
     }
-    va_status = vaPutSurface(g_va_display, vf->surface, pixmap,
-                             0, 0, dec->width, dec->height,
-                             0, 0, width, height,
+    if ((dec->pixmap == 0) ||
+        (dec->pixmap_width != width) || (dec->pixmap_height != height))
+    {
+        dpy = (Display *) display;
+        if (dec->pixmap != 0)
+        {
+            XFreePixmap(dpy, dec->pixmap);
+        }
+        root_window = XDefaultRootWindow(dpy);
+        depth = DefaultDepth(dpy, DefaultScreen(dpy));
+        dec->pixmap = (int) XCreatePixmap(dpy, root_window,
+                                          width, height, depth);
+        dec->pixmap_width = width;
+        dec->pixmap_height = height;
+        dec->display = display;
+    }
+    va_status = vaPutSurface(g_va_display,
+                             vf->surface, /* src */
+                             (Pixmap) (dec->pixmap), /* dst */
+                             0, 0, dec->width, dec->height, /* src */
+                             0, 0, width, height, /* dst */
                              0, 0, 0);
+    vf->free(vf);
     if (va_status != VA_STATUS_SUCCESS)
     {
         return YI_ERROR_VAPUTSURFACE;
     }
+    *pixmap = dec->pixmap;
     return YI_SUCCESS;
 #else
     return YI_ERROR_UNIMP;

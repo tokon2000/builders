@@ -29,6 +29,7 @@
 #define YI_ERROR_DECODESTART            201
 #define YI_ERROR_DECODEDECODE           202
 #define YI_ERROR_DECODEGETOUTPUT        203
+#define YI_ERROR_DECODEGETFORMATINFO    204
 
 #define YI_TYPE_H264                    1
 
