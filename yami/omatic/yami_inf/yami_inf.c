@@ -1,4 +1,10 @@
 
+/* use casees
+   no X11 and no xcb, server use
+   X11 and no xcb, must use X11
+   X11 and xcb, use xcb if dri3 is present
+*/
+
 #if defined(HAVE_CONFIG_H)
 #include <config_ac.h>
 #endif
@@ -15,6 +21,10 @@
 #include <va/va_x11.h>
 #endif
 
+#if defined(YAMI_INF_XCB)
+#include <xcb/xcb.h>
+#endif
+
 #include <YamiVersion.h>
 #include <VideoEncoderCapi.h>
 #include <VideoDecoderCapi.h>
@@ -24,6 +34,14 @@
 static VADisplay g_va_display = 0;
 static VAConfigID g_vp_config = 0;
 static VAContextID g_vp_context = 0;
+static int g_dri3_major = 0;
+static int g_dri3_minor = 0;
+static int g_dri3_first_error = 0;
+static int g_dri3_present = 0;
+static int g_present_major = 0;
+static int g_present_minor = 0;
+static int g_present_first_error = 0;
+static int g_present_present = 0;
 
 struct yami_inf_enc_priv
 {
@@ -70,8 +88,9 @@ yami_init(int type, void *display)
     VAStatus va_status;
 #if defined(YAMI_INF_X11)
     Display *dpy;
-#endif
 
+    dpy = (Display *) display;
+#endif
     if (type == YI_TYPE_DRM)
     {
         fd = (int) (size_t) display;
@@ -80,7 +99,6 @@ yami_init(int type, void *display)
     else if (type == YI_TYPE_X11)
     {
 #if defined(YAMI_INF_X11)
-        dpy = (Display *) display;
         g_va_display = vaGetDisplay(dpy);
 #else
         return YI_ERROR_UNIMP;
@@ -108,6 +126,22 @@ yami_init(int type, void *display)
         return YI_ERROR_VACREATECONTEXT;
     }
     yamiGetApiVersion(&yami_version);
+#if defined(YAMI_INF_X11) && defined(YAMI_INF_XCB)
+    if (XQueryExtension(dpy, "DRI3", &g_dri3_major, &g_dri3_minor,
+                        &g_dri3_first_error))
+    {
+        g_dri3_present = 1;
+    }
+    if (XQueryExtension(dpy, "Present", &g_present_major, &g_present_minor,
+                        &g_present_first_error))
+    {
+        g_present_present = 1;
+    }
+    if (g_present_present == 0)
+    {
+        g_dri3_present = 0;
+    }
+#endif
     return YI_SUCCESS;
 }
 
@@ -614,7 +648,7 @@ yami_decoder_delete(void *obj)
     {
         return YI_SUCCESS;
     }
-    if (dec->pixmap != 0)
+    if ((dec->display != NULL) && (dec->pixmap != 0))
     {
 #if defined(YAMI_INF_X11)
         XFreePixmap((Display *) (dec->display), (Pixmap) (dec->pixmap));
@@ -680,8 +714,7 @@ yami_decoder_get_pixmap(void *obj, void* display,
         vf->free(vf);
         return YI_ERROR_DECODEGETOUTPUT;
     }
-    if ((dec->pixmap == 0) ||
-        (dec->pixmap_width != width) || (dec->pixmap_height != height))
+    if ((dec->pixmap_width != width) || (dec->pixmap_height != height))
     {
         dpy = (Display *) display;
         if (dec->pixmap != 0)
@@ -695,6 +728,11 @@ yami_decoder_get_pixmap(void *obj, void* display,
         dec->pixmap_width = width;
         dec->pixmap_height = height;
         dec->display = display;
+    }
+    if (dec->pixmap == 0)
+    {
+        vf->free(vf);
+        return YI_ERROR_OTHER;
     }
     va_status = vaPutSurface(g_va_display,
                              vf->surface, /* src */
