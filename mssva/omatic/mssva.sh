@@ -13,8 +13,13 @@ GOT_PARAM=0
 #LIBVA_SRC_NAME="libva-1.67.0.pre1"
 
 # MediaServerStudioEssentials2018R1
+#LIBDRM_SRC_NAME="libdrm-2.4.74"
+#LIBVA_SRC_NAME="libva-2.0.1.pre1"
+#LIBVAUTILS_SRC_NAME="libva-utils-2.0.0"
+
+# MediaServerStudioEssentials2018_16.9_00183
 LIBDRM_SRC_NAME="libdrm-2.4.74"
-LIBVA_SRC_NAME="libva-2.0.1.pre1"
+LIBVA_SRC_NAME="libva-2.1.1.pre1"
 LIBVAUTILS_SRC_NAME="libva-utils-2.0.0"
 
 for i in "$@"
@@ -48,7 +53,7 @@ fi
 
 if test $SHOW_HELP -ne 0
 then
-    echo "./buildyami.sh [--prefix=/opt/yami] [--enable-x11 | --disable-x11]"
+    echo "./mssva.sh [--prefix=/opt/mssva] [--enable-x11 | --disable-x11]"
     exit 0
 fi
 
@@ -124,6 +129,7 @@ rm -fr $LIBVA_SRC_NAME
 bunzip2 -k $LIBVA_SRC_NAME.tar.bz2
 tar -xf $LIBVA_SRC_NAME.tar
 cd $LIBVA_SRC_NAME
+./autogen.sh
 ./configure --prefix=$INSTALL_PATH $LIBVA_CONFIG
 if test $? -ne 0
 then
