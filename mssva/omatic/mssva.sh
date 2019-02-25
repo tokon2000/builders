@@ -177,3 +177,9 @@ then
   exit 1
 fi
 cd ..
+
+cd MSS2018R2/mediasdk/opensource/mfx_dispatch
+cmake . -DCMAKE_INSTALL_PREFIX=$INSTALL_PATH
+make clean
+make
+make install
