@@ -86,8 +86,8 @@ frame_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
     vars = (struct _vars*)pthis;
     printf("frame_alloc: Type 0x%8.8x NumFrameSuggested %d\n",
            request->Type, request->NumFrameSuggested);
-    if (request->Type & MFX_MEMTYPE_INTERNAL_FRAME &&
-        request->Type & MFX_MEMTYPE_FROM_ENCODE)
+    if ((request->Type & MFX_MEMTYPE_INTERNAL_FRAME) &&
+        (request->Type & MFX_MEMTYPE_FROM_ENCODE))
     {
     }
     else
@@ -110,6 +110,7 @@ frame_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
     for (index = vars->num_va_surfaces - 1; index >= 0; index--)
     {
         vars->va_surfaces1[index] = &(vars->va_surfaces[index]);
+        printf("frame_alloc: surfaceid %d\n", vars->va_surfaces[index]);
     }
     response->mids = vars->va_surfaces1;
     response->NumFrameActual = vars->num_va_surfaces;
@@ -136,7 +137,7 @@ frame_unlock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 mfxStatus MFX_CDECL
 frame_get_hdl(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 {
-    printf("frame_get_hdl:\n");
+    printf("frame_get_hdl: mid %d\n", *((int*)mid));
     *handle = mid;
     return MFX_ERR_NONE;
 }
@@ -146,11 +147,16 @@ mfxStatus MFX_CDECL
 frame_free(mfxHDL pthis, mfxFrameAllocResponse *response)
 {
     struct _vars* vars;
+    int index;
+    VASurfaceID sur;
 
     printf("frame_free:\n");
     vars = (struct _vars*)pthis;
-    vaDestroySurfaces(vars->va_display,
-                      vars->va_surfaces, vars->num_va_surfaces);
+    for (index = response->NumFrameActual - 1; index >= 0; index--)
+    {
+        sur = *((VASurfaceID*)(response->mids[index]));
+        vaDestroySurfaces(vars->va_display, &sur, 1);
+    }
     return MFX_ERR_NONE;
 }
 
@@ -158,191 +164,190 @@ frame_free(mfxHDL pthis, mfxFrameAllocResponse *response)
 int
 main(int argc, char** argv)
 {
-    struct _vars vars;
+    struct _vars* vars;
     VAStatus va_status;
     mfxStatus status;
     int index;
 
-    memset(&vars, 0, sizeof(vars));
-    vars.version.Minor = MFX_VERSION_MINOR;
-    vars.version.Major = MFX_VERSION_MAJOR;
-    //vars.version.Minor = 24;
-    //vars.version.Major = 1;
+    vars = (struct _vars*)calloc(1, sizeof(struct _vars));
+    vars->version.Minor = MFX_VERSION_MINOR;
+    vars->version.Major = MFX_VERSION_MAJOR;
+    //vars->version.Minor = 24;
+    //vars->version.Major = 1;
 
-    vars.frame_allocator.pthis = &vars;
-    vars.frame_allocator.Alloc = frame_alloc;
-    vars.frame_allocator.Lock = frame_lock;
-    vars.frame_allocator.Unlock = frame_unlock;
-    vars.frame_allocator.GetHDL = frame_get_hdl;
-    vars.frame_allocator.Free = frame_free;
+    vars->frame_allocator.pthis = vars;
+    vars->frame_allocator.Alloc = frame_alloc;
+    vars->frame_allocator.Lock = frame_lock;
+    vars->frame_allocator.Unlock = frame_unlock;
+    vars->frame_allocator.GetHDL = frame_get_hdl;
+    vars->frame_allocator.Free = frame_free;
 
-    vars.fd = open("/dev/dri/renderD128", O_RDWR);
-    if (vars.fd == -1)
+    vars->fd = open("/dev/dri/renderD128", O_RDWR);
+    if (vars->fd == -1)
     {
         printf("main: error open /dev/dri/renderD128\n");
         return 1;
     }
-    vars.va_display = vaGetDisplayDRM(vars.fd);
-    if (vars.va_display == 0)
+    vars->va_display = vaGetDisplayDRM(vars->fd);
+    if (vars->va_display == 0)
     {
         printf("main: vaGetDisplayDRM failed\n");
-        close(vars.fd);
+        close(vars->fd);
         return 1;
     }
-    va_status = vaInitialize(vars.va_display, &vars.va_major, &vars.va_minor);
+    va_status = vaInitialize(vars->va_display,
+                             &(vars->va_major), &(vars->va_minor));
     if (va_status != VA_STATUS_SUCCESS)
     {
         printf("main: vaInitialize failed\n");
-        close(vars.fd);
+        close(vars->fd);
         return 1;
     }
-    vars.imp = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_VAAPI;
-    //vars.imp = MFX_IMPL_SOFTWARE;
-    //vars.imp = MFX_IMPL_AUTO_ANY;
-    status = MFXInit(vars.imp, &vars.version, &vars.session);
+    vars->imp = MFX_IMPL_HARDWARE | MFX_IMPL_VIA_VAAPI;
+    status = MFXInit(vars->imp, &(vars->version), &(vars->session));
     if (status != MFX_ERR_NONE)
     {
         printf("main: MFXInit failed %d\n", status);
-        vaTerminate(vars.va_display);
-        close(vars.fd);
+        vaTerminate(vars->va_display);
+        close(vars->fd);
         return 1;
     }
-    status = MFXVideoCORE_SetHandle(vars.session, MFX_HANDLE_VA_DISPLAY, vars.va_display);
+    status = MFXVideoCORE_SetHandle(vars->session, MFX_HANDLE_VA_DISPLAY,
+                                    vars->va_display);
     if (status != MFX_ERR_NONE)
     {
         printf("main: MFXVideoCORE_SetHandle failed\n");
-        MFXClose(vars.session);
-        vaTerminate(vars.va_display);
-        close(vars.fd);
+        MFXClose(vars->session);
+        vaTerminate(vars->va_display);
+        close(vars->fd);
         return 1;
     }
-    status = MFXVideoCORE_SetFrameAllocator(vars.session, &vars.frame_allocator);
+    status = MFXVideoCORE_SetFrameAllocator(vars->session,
+                                            &(vars->frame_allocator));
     if (status != MFX_ERR_NONE)
     {
         printf("main: MFXVideoCORE_SetFrameAllocator failed\n");
-        MFXClose(vars.session);
-        vaTerminate(vars.va_display);
-        close(vars.fd);
+        MFXClose(vars->session);
+        vaTerminate(vars->va_display);
+        close(vars->fd);
         return 1;
     }
-    vars.video_param.mfx.CodecId = MFX_CODEC_AVC;
-    vars.video_param.mfx.CodecProfile = MFX_PROFILE_AVC_MAIN;
-    //vars.video_param.IOPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY;
-    //vars.video_param.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_IN_VIDEO_MEMORY;
-    //vars.video_param.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
-    vars.video_param.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
-    //vars.video_param.IOPattern = MFX_IOPATTERN_IN_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
-    vars.video_param.AsyncDepth = 1;
-    vars.video_param.mfx.TargetUsage = 4;
-    vars.video_param.mfx.FrameInfo.FrameRateExtN = 24;
-    vars.video_param.mfx.FrameInfo.FrameRateExtD = 1;
-    vars.video_param.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-    vars.video_param.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-    vars.video_param.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-    vars.video_param.mfx.FrameInfo.CropX = 0;
-    vars.video_param.mfx.FrameInfo.CropY = 0;
-    vars.video_param.mfx.FrameInfo.CropW = 1280;
-    vars.video_param.mfx.FrameInfo.CropH = 720;
-    vars.video_param.mfx.FrameInfo.Width = 1280;
-    vars.video_param.mfx.FrameInfo.Height = 720;
-    vars.video_param.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
-    vars.video_param.mfx.QPI = 28;
-    vars.video_param.mfx.QPB = 28;
-    vars.video_param.mfx.QPP = 28;
-    vars.video_param.mfx.GopPicSize = 1024;
-    vars.video_param.mfx.NumRefFrame = 1;
+    vars->video_param.mfx.CodecId = MFX_CODEC_AVC;
+    vars->video_param.mfx.CodecProfile = MFX_PROFILE_AVC_MAIN;
+    vars->video_param.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+    vars->video_param.AsyncDepth = 1;
+    vars->video_param.mfx.TargetUsage = 4;
+    vars->video_param.mfx.FrameInfo.FrameRateExtN = 24;
+    vars->video_param.mfx.FrameInfo.FrameRateExtD = 1;
+    vars->video_param.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+    vars->video_param.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    vars->video_param.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
+    vars->video_param.mfx.FrameInfo.Width = 1280;
+    vars->video_param.mfx.FrameInfo.Height = 720;
+    vars->video_param.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
+    vars->video_param.mfx.QPI = 28;
+    vars->video_param.mfx.QPB = 28;
+    vars->video_param.mfx.QPP = 28;
+    vars->video_param.mfx.GopPicSize = 1024;
+    vars->video_param.mfx.NumRefFrame = 1;
     /* low latency, I and P frames only */
-    vars.video_param.mfx.GopRefDist = 1;
-    vars.video_param.mfx.NumSlice = 1;
+    vars->video_param.mfx.GopRefDist = 1;
+    vars->video_param.mfx.NumSlice = 1;
 
-    vars.video_param_out = vars.video_param;
-    status = MFXVideoENCODE_Query(vars.session, &vars.video_param, &vars.video_param_out);
+    vars->video_param_out = vars->video_param;
+    status = MFXVideoENCODE_Query(vars->session, &(vars->video_param),
+                                  &(vars->video_param_out));
     if (status != MFX_ERR_NONE)
     {
         if (status < MFX_ERR_NONE)
         {
             printf("main: MFXVideoENCODE_Query failed status %d\n", status);
-            MFXClose(vars.session);
-            vaTerminate(vars.va_display);
-            close(vars.fd);
+            MFXClose(vars->session);
+            vaTerminate(vars->va_display);
+            close(vars->fd);
             return 1;
         }
         printf("main: MFXVideoENCODE_Query warning status %d\n", status);
     }
 
     //printf("main: video_param\n");
-    //hexdump(&vars.video_param, sizeof(vars.video_param));
+    //hexdump(&(vars->video_param), sizeof(vars->video_param));
     //printf("main: video_param_out\n");
-    //hexdump(&vars.video_param_out, sizeof(vars.video_param_out));
+    //hexdump(&(vars->video_param_out), sizeof(vars->video_param_out));
 
-    status = MFXVideoENCODE_QueryIOSurf(vars.session, &vars.video_param_out, &vars.fa_request);
+    status = MFXVideoENCODE_QueryIOSurf(vars->session,
+                                        &(vars->video_param_out),
+                                        &(vars->fa_request));
     if (status != MFX_ERR_NONE)
     {
         if (status < MFX_ERR_NONE)
         {
-            printf("main: MFXVideoENCODE_QueryIOSurf failed status %d\n", status);
-            MFXClose(vars.session);
-            vaTerminate(vars.va_display);
-            close(vars.fd);
+            printf("main: MFXVideoENCODE_QueryIOSurf failed status %d\n",
+                   status);
+            MFXClose(vars->session);
+            vaTerminate(vars->va_display);
+            close(vars->fd);
             return 1;
         }
         printf("main: MFXVideoENCODE_QueryIOSurf warning status %d\n", status);
     }
-    status = MFXVideoENCODE_Init(vars.session, &vars.video_param_out);
+    status = MFXVideoENCODE_Init(vars->session, &(vars->video_param_out));
     if (status != MFX_ERR_NONE)
     {
         if (status < MFX_ERR_NONE)
         {
             printf("main: MFXVideoENCODE_Init failed status %d\n", status);
-            MFXClose(vars.session);
-            vaTerminate(vars.va_display);
-            close(vars.fd);
+            MFXClose(vars->session);
+            vaTerminate(vars->va_display);
+            close(vars->fd);
             return 1;
         }
         printf("main: MFXVideoENCODE_Init warning status %d\n", status);
     }
-
-    va_status = vaCreateSurfaces(vars.va_display, VA_RT_FORMAT_YUV420,
-                                 1280, 720, &vars.enc_surface, 1, NULL, 0);
+    va_status = vaCreateSurfaces(vars->va_display, VA_RT_FORMAT_YUV420,
+                                 1280, 720, &(vars->enc_surface), 1, NULL, 0);
     if (va_status != VA_STATUS_SUCCESS)
     {
         printf("main: vaCreateSurfaces failed status %d\n", va_status);
-        MFXVideoENCODE_Close(vars.session);
-        MFXClose(vars.session);
-        vaTerminate(vars.va_display);
-        close(vars.fd);
+        MFXVideoENCODE_Close(vars->session);
+        MFXClose(vars->session);
+        vaTerminate(vars->va_display);
+        close(vars->fd);
         return 1;
     }
-
-    vars.surface.Info = vars.video_param_out.mfx.FrameInfo;
-    vars.bs.MaxLength = 1024 * 1024 * 16;
-    vars.bs.Data = (unsigned char*)malloc(vars.bs.MaxLength);
+    printf("main: surfaceid %d\n", vars->enc_surface);
+    vars->surface.Info = vars->video_param_out.mfx.FrameInfo;
+    vars->bs.MaxLength = 1024 * 1024 * 16;
+    vars->bs.Data = (unsigned char*)malloc(vars->bs.MaxLength);
     index = 10;
     while (--index)
     {
-        vars.syncp = NULL;
-        vars.bs.DataLength = 0;
-        vars.surface.Data.MemId = &vars.enc_surface;
-        status = MFXVideoENCODE_EncodeFrameAsync(vars.session, &vars.ctrl, &vars.surface, &vars.bs, &vars.syncp);
+        vars->syncp = NULL;
+        vars->bs.DataLength = 0;
+        vars->surface.Data.MemId = &(vars->enc_surface);
+        status = MFXVideoENCODE_EncodeFrameAsync(vars->session, &(vars->ctrl),
+                                                 &(vars->surface), &(vars->bs),
+                                                 &(vars->syncp));
         printf("main: MFXVideoENCODE_EncodeFrameAsync status %d\n", status);
         if (status >= MFX_ERR_NONE)
         {
-            if (vars.syncp != NULL)
+            if (vars->syncp != NULL)
             {
-                status = MFXVideoCORE_SyncOperation(vars.session, vars.syncp, 1000);
+                status = MFXVideoCORE_SyncOperation(vars->session,
+                                                    vars->syncp, 1000);
                 printf("main: MFXVideoCORE_SyncOperation status %d\n", status);
             }
         }
-        printf("main: MFXVideoCORE_SyncOperation DataLength %d\n", vars.bs.DataLength);
-        hexdump(vars.bs.Data, vars.bs.DataLength);
+        printf("main: MFXVideoCORE_SyncOperation DataLength %d\n",
+               vars->bs.DataLength);
+        hexdump(vars->bs.Data, vars->bs.DataLength);
     }
-
-    vaDestroySurfaces(vars.va_display, &vars.enc_surface, 1);
-
-    free(vars.bs.Data);
-    MFXVideoENCODE_Close(vars.session);
-    MFXClose(vars.session);
-    vaTerminate(vars.va_display);
-    close(vars.fd);
+    vaDestroySurfaces(vars->va_display, &(vars->enc_surface), 1);
+    free(vars->bs.Data);
+    MFXVideoENCODE_Close(vars->session);
+    MFXClose(vars->session);
+    vaTerminate(vars->va_display);
+    close(vars->fd);
+    free(vars);
     return 0;
 }
