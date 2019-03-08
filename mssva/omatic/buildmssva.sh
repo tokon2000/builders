@@ -53,7 +53,7 @@ fi
 
 if test $SHOW_HELP -ne 0
 then
-    echo "./mssva.sh [--prefix=/opt/mssva] [--enable-x11 | --disable-x11]"
+    echo "./buildmssva.sh [--prefix=/opt/mssva] [--enable-x11 | --disable-x11]"
     exit 0
 fi
 
@@ -183,3 +183,10 @@ cmake . -DCMAKE_INSTALL_PREFIX=$INSTALL_PATH
 make clean
 make
 make install
+
+cd ../../../..
+cd mssva_inf
+./bootstrap
+./configure --prefix=$INSTALL_PATH
+make
+make install-strip
