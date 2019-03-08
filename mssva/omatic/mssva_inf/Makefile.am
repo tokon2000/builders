@@ -1,0 +1,26 @@
+
+EXTRA_DIST =
+
+EXTRA_DEFINES =
+EXTRA_INCLUDES =
+EXTRA_LIBS =
+EXTRA_FLAGS =
+EXTRA_SRC =
+EXTRA_ENCODE_SRC =
+
+AM_CFLAGS = -I. $(LIBVA_CFLAGS) $(EXTRA_DEFINES)
+MSSVA_INF_EXTRA_LIBS = $(LIBVA_LIBS) $(EXTRA_LIBS)
+
+INCLUDES = $(EXTRA_INCLUDES)
+
+lib_LTLIBRARIES = libmssva_inf.la
+
+libmssva_inf_la_LDFLAGS = $(EXTRA_FLAGS)
+
+libmssva_inf_ladir = $(moduledir)
+
+libmssva_inf_la_SOURCES = mssva_inf.c $(EXTRA_ENCODE_SRC)
+
+libmssva_inf_la_LIBADD = $(MSSVA_INF_EXTRA_LIBS)
+
+include_HEADERS = mssva_inf.h
