@@ -57,6 +57,8 @@ mssva_init(int type, void *display)
     int minor_version;
     VAStatus va_status;
 
+    setenv("LIBVA_DRIVERS_PATH", CONFIG_PREFIX "/lib", 1);
+    setenv("LIBVA_DRIVER_NAME", "iHD", 1);
     if (type == MI_TYPE_DRM)
     {
         fd = (int) (size_t) display;
@@ -282,10 +284,10 @@ mssva_encoder_create(void **obj, int width, int height, int type, int flags)
     enc->video_param.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
     enc->video_param.mfx.FrameInfo.CropX = 0;
     enc->video_param.mfx.FrameInfo.CropY = 0;
-    enc->video_param.mfx.FrameInfo.CropW = width;
-    enc->video_param.mfx.FrameInfo.CropH = height;
-    enc->video_param.mfx.FrameInfo.Width = width;
-    enc->video_param.mfx.FrameInfo.Height = height;
+    enc->video_param.mfx.FrameInfo.CropW = (width + 15) & ~15;
+    enc->video_param.mfx.FrameInfo.CropH = (height + 15) & ~15;
+    enc->video_param.mfx.FrameInfo.Width = (width + 15) & ~15;
+    enc->video_param.mfx.FrameInfo.Height = (height + 15) & ~15;
     enc->video_param.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
     enc->video_param.mfx.QPI = 28;
     enc->video_param.mfx.QPB = 28;
@@ -393,10 +395,10 @@ mssva_encoder_resize(void *obj, int width, int height)
     {
         return MI_ERROR_MFXVIDEOENCODE_CLOSE;
     }
-    enc->video_param.mfx.FrameInfo.CropW = width;
-    enc->video_param.mfx.FrameInfo.CropH = height;
-    enc->video_param.mfx.FrameInfo.Width = width;
-    enc->video_param.mfx.FrameInfo.Height = height;
+    enc->video_param.mfx.FrameInfo.CropW = (width + 15) & ~15;
+    enc->video_param.mfx.FrameInfo.CropH = (height + 15) & ~15;
+    enc->video_param.mfx.FrameInfo.Width = (width + 15) & ~15;
+    enc->video_param.mfx.FrameInfo.Height = (height + 15) & ~15;
     status = MFXVideoENCODE_Query(enc->session, &(enc->video_param),
                                   &(enc->video_param_out));
     if (status != MFX_ERR_NONE)
