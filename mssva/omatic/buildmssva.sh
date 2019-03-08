@@ -8,15 +8,6 @@ SHOW_HELP=0
 ENABLE_X11=0
 GOT_PARAM=0
 
-# MediaServerStudioEssentials2017
-#LIBDRM_SRC_NAME="libdrm-2.4.66"
-#LIBVA_SRC_NAME="libva-1.67.0.pre1"
-
-# MediaServerStudioEssentials2018R1
-#LIBDRM_SRC_NAME="libdrm-2.4.74"
-#LIBVA_SRC_NAME="libva-2.0.1.pre1"
-#LIBVAUTILS_SRC_NAME="libva-utils-2.0.0"
-
 # MediaServerStudioEssentials2018_16.9_00183
 LIBDRM_SRC_NAME="libdrm-2.4.74"
 LIBVA_SRC_NAME="libva-2.1.1.pre1"
@@ -95,6 +86,14 @@ wget http://server1.xrdp.org/yami/$LIBVAUTILS_SRC_NAME.tar.bz2
 if test $? -ne 0
 then
   echo "error downloading $LIBVAUTILS_SRC_NAME.tar.bz2"
+  exit 1
+fi
+
+rm -f mss-2018-R2-min.tar.gz
+wget http://server1.xrdp.org/yami/mss-2018-R2-min.tar.gz
+if test $? -ne 0
+then
+  echo "error downloading mss-2018-R2-min.tar.gz"
   exit 1
 fi
 
@@ -190,3 +189,10 @@ cd mssva_inf
 ./configure --prefix=$INSTALL_PATH
 make
 make install-strip
+cd ..
+
+echo "extracting mss-2018-R2-min.tar.gz"
+LCD=$PWD
+cd $INSTALL_PATH/lib
+tar -xf $LCD/mss-2018-R2-min.tar.gz
+cd $LCD
