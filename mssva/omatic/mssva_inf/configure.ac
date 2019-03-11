@@ -11,6 +11,7 @@ AC_C_CONST
 AC_PROG_LIBTOOL
 
 PKG_CHECK_MODULES([LIBVA], [libva >= 1.1.0], [], [AC_MSG_ERROR([can not find libva])])
+PKG_CHECK_MODULES([LIBVA_DRM], [libva-drm >= 1.1.0], [], [AC_MSG_ERROR([can not find libva-drm])])
 
 AM_CONDITIONAL(GOT_PREFIX, test "x${prefix}" != "xNONE"])
 
