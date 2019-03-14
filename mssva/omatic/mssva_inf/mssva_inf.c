@@ -48,6 +48,10 @@ mssva_get_version(int *version)
     return MI_SUCCESS;
 }
 
+#if !defined(CONFIG_PREFIX)
+#define CONFIG_PREFIX "/opt/mssva"
+#endif
+
 /*****************************************************************************/
 int
 mssva_init(int type, void *display)
@@ -56,9 +60,9 @@ mssva_init(int type, void *display)
     int major_version;
     int minor_version;
     VAStatus va_status;
+    const char *libva_driver_path;
+    const char *libva_driver_name;
 
-    setenv("LIBVA_DRIVERS_PATH", CONFIG_PREFIX "/lib", 1);
-    setenv("LIBVA_DRIVER_NAME", "iHD", 1);
     if (type == MI_TYPE_DRM)
     {
         fd = (int) (size_t) display;
@@ -68,7 +72,27 @@ mssva_init(int type, void *display)
     {
         return MI_ERROR_TYPE;
     }
+    libva_driver_path = getenv("LIBVA_DRIVERS_PATH");
+    libva_driver_name = getenv("LIBVA_DRIVER_NAME");
+    setenv("LIBVA_DRIVERS_PATH", CONFIG_PREFIX "/lib", 1);
+    setenv("LIBVA_DRIVER_NAME", "iHD", 1);
     va_status = vaInitialize(g_va_display, &major_version, &minor_version);
+    if (libva_driver_path == NULL)
+    {
+        unsetenv("LIBVA_DRIVERS_PATH");
+    }
+    else
+    {
+        setenv("LIBVA_DRIVERS_PATH", libva_driver_path, 1);
+    }
+    if (libva_driver_name == NULL)
+    {
+        unsetenv("LIBVA_DRIVER_NAME");
+    }
+    else
+    {
+        setenv("LIBVA_DRIVER_NAME", libva_driver_name, 1);
+    }
     if (va_status != VA_STATUS_SUCCESS)
     {
         return MI_ERROR_VAINITIALIZE;
@@ -111,8 +135,6 @@ frame_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
     int index;
 
     enc = (struct mssva_inf_enc_priv*)pthis;
-    printf("frame_alloc: Type 0x%8.8x NumFrameSuggested %d\n",
-           request->Type, request->NumFrameSuggested);
     if ((request->Type & MFX_MEMTYPE_INTERNAL_FRAME) &&
         (request->Type & MFX_MEMTYPE_FROM_ENCODE))
     {
@@ -137,7 +159,6 @@ frame_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
     for (index = enc->num_va_surfaces - 1; index >= 0; index--)
     {
         enc->va_surfaces1[index] = &(enc->va_surfaces[index]);
-        printf("frame_alloc: surfaceid %d\n", enc->va_surfaces[index]);
     }
     response->mids = enc->va_surfaces1;
     response->NumFrameActual = enc->num_va_surfaces;
@@ -148,7 +169,6 @@ frame_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
 static mfxStatus MFX_CDECL
 frame_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 {
-    printf("frame_lock:\n");
     return MFX_ERR_NONE;
 }
 
@@ -156,7 +176,6 @@ frame_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 static mfxStatus MFX_CDECL
 frame_unlock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 {
-    printf("frame_unlock:\n");
     return MFX_ERR_NONE;
 }
 
@@ -164,7 +183,6 @@ frame_unlock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 static mfxStatus MFX_CDECL
 frame_get_hdl(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 {
-    printf("frame_get_hdl: mid %d\n", *((int*)mid));
     *handle = mid;
     return MFX_ERR_NONE;
 }
@@ -176,7 +194,6 @@ frame_free(mfxHDL pthis, mfxFrameAllocResponse *response)
     int index;
     VASurfaceID sur;
 
-    printf("frame_free:\n");
     for (index = response->NumFrameActual - 1; index >= 0; index--)
     {
         sur = *((VASurfaceID*)(response->mids[index]));
@@ -197,7 +214,6 @@ mssva_encoder_create(void **obj, int width, int height, int type, int flags)
     mfxIMPL imp;
     mfxStatus status;
 
-    printf("mssva_encoder_create: width %d height %d\n", width, height);
     enc = (struct mssva_inf_enc_priv *)
           calloc(1, sizeof(struct mssva_inf_enc_priv));
     if (enc == NULL)
@@ -207,7 +223,18 @@ mssva_encoder_create(void **obj, int width, int height, int type, int flags)
     if (type == MI_TYPE_H264)
     {
         enc->video_param.mfx.CodecId = MFX_CODEC_AVC;
-        enc->video_param.mfx.CodecProfile = MFX_PROFILE_AVC_MAIN;
+        switch (flags & MI_H264_ENC_FLAGS_PROFILE_MASK)
+        {
+            case MI_H264_ENC_FLAGS_PROFILE_MAIN:
+                enc->video_param.mfx.CodecProfile = MFX_PROFILE_AVC_MAIN;
+                break;
+            case MI_H264_ENC_FLAGS_PROFILE_HIGH:
+                enc->video_param.mfx.CodecProfile = MFX_PROFILE_AVC_HIGH;
+                break;
+            default:
+                enc->video_param.mfx.CodecProfile = MFX_PROFILE_AVC_BASELINE;
+                break;
+        }
     }
     else
     {
@@ -388,7 +415,6 @@ mssva_encoder_resize(void *obj, int width, int height)
     VASurfaceAttrib attribs[1];
     mfxStatus status;
 
-    printf("mssva_encoder_resize: width %d height %d\n", width, height);
     enc = (struct mssva_inf_enc_priv *) obj;
     status = MFXVideoENCODE_Close(enc->session);
     if (status != MFX_ERR_NONE)
@@ -568,7 +594,6 @@ mssva_encoder_encode(void *obj, void *cdata, int *cdata_max_bytes)
     mfxFrameSurface1 surface;
     mfxEncodeCtrl ctrl;
     mfxStatus status;
-    VASurfaceID enc_surface;
 
     enc = (struct mssva_inf_enc_priv *) obj;
     if (enc->yuvdata != NULL)
@@ -600,7 +625,6 @@ mssva_encoder_encode(void *obj, void *cdata, int *cdata_max_bytes)
             }
             vaDestroyBuffer(g_va_display, buf[0]);
         }
-        enc_surface = enc->va_surface[0];
     }
     else
     {
@@ -614,9 +638,8 @@ mssva_encoder_encode(void *obj, void *cdata, int *cdata_max_bytes)
         {
             return MI_ERROR_VAPUTIMAGE;
         }
-        enc_surface = enc->va_surface[0];
     }
-    va_status = vaSyncSurface(g_va_display, enc_surface);
+    va_status = vaSyncSurface(g_va_display, enc->va_surface[0]);
     if (va_status != VA_STATUS_SUCCESS)
     {
         return MI_ERROR_VASYNCSURFACE;
@@ -624,20 +647,18 @@ mssva_encoder_encode(void *obj, void *cdata, int *cdata_max_bytes)
     memset(&surface, 0, sizeof(surface));
     memset(&bs, 0, sizeof(bs));
     memset(&ctrl, 0, sizeof(ctrl));
-    surface.Data.MemId = &enc_surface;
+    surface.Data.MemId = enc->va_surface;
     surface.Info = enc->video_param_out.mfx.FrameInfo;
     syncp = NULL;
     bs.MaxLength = *cdata_max_bytes;
     bs.Data = (unsigned char *) cdata;
     status = MFXVideoENCODE_EncodeFrameAsync(enc->session, &ctrl,
                                              &surface, &bs, &syncp);
-    printf("MFXVideoENCODE_EncodeFrameAsync status %d syncp %p\n", status, syncp);
     if (status >= MFX_ERR_NONE)
     {
         if (syncp != NULL)
         {
             status = MFXVideoCORE_SyncOperation(enc->session, syncp, 1000);
-            printf("MFXVideoCORE_SyncOperation status %d\n", status);
             if (status != MFX_ERR_NONE)
             {
                 return MI_ERROR_MFXVIDEOCORE_SYNCOPERATION;
