@@ -1,7 +1,7 @@
 
 OBJS=gputest_mssva.o
 
-CFLAGS=-O2 -I/opt/mssva/include
+CFLAGS=-Wall -O2 -I/opt/mssva/include
 
 LD_FLAGS=-L/opt/mssva/lib -Wl,-rpath,/opt/mssva/lib
 
