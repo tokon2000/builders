@@ -197,6 +197,7 @@ mssva_encoder_create(void **obj, int width, int height, int type, int flags)
     mfxIMPL imp;
     mfxStatus status;
 
+    printf("mssva_encoder_create: width %d height %d\n", width, height);
     enc = (struct mssva_inf_enc_priv *)
           calloc(1, sizeof(struct mssva_inf_enc_priv));
     if (enc == NULL)
@@ -282,10 +283,6 @@ mssva_encoder_create(void **obj, int width, int height, int type, int flags)
     enc->video_param.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
     enc->video_param.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     enc->video_param.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-    enc->video_param.mfx.FrameInfo.CropX = 0;
-    enc->video_param.mfx.FrameInfo.CropY = 0;
-    enc->video_param.mfx.FrameInfo.CropW = (width + 15) & ~15;
-    enc->video_param.mfx.FrameInfo.CropH = (height + 15) & ~15;
     enc->video_param.mfx.FrameInfo.Width = (width + 15) & ~15;
     enc->video_param.mfx.FrameInfo.Height = (height + 15) & ~15;
     enc->video_param.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
@@ -356,7 +353,7 @@ mssva_encoder_delete(void *obj)
         vaDestroySurfaces(g_va_display, enc->fd_va_surface, 1);
     }
     free(enc);
-    return 0;
+    return MI_SUCCESS;
 }
 
 /*****************************************************************************/
@@ -366,7 +363,8 @@ mssva_encoder_get_width(void *obj, int *width)
     struct mssva_inf_enc_priv *enc;
 
     enc = (struct mssva_inf_enc_priv *) obj;
-    return enc->width;
+    *width = enc->width;
+    return MI_SUCCESS;
 }
 
 /*****************************************************************************/
@@ -376,7 +374,8 @@ mssva_encoder_get_height(void *obj, int *height)
     struct mssva_inf_enc_priv *enc;
 
     enc = (struct mssva_inf_enc_priv *) obj;
-    return enc->height;
+    *height = enc->height;
+    return MI_SUCCESS;
 }
 
 /*****************************************************************************/
@@ -389,14 +388,13 @@ mssva_encoder_resize(void *obj, int width, int height)
     VASurfaceAttrib attribs[1];
     mfxStatus status;
 
+    printf("mssva_encoder_resize: width %d height %d\n", width, height);
     enc = (struct mssva_inf_enc_priv *) obj;
     status = MFXVideoENCODE_Close(enc->session);
     if (status != MFX_ERR_NONE)
     {
         return MI_ERROR_MFXVIDEOENCODE_CLOSE;
     }
-    enc->video_param.mfx.FrameInfo.CropW = (width + 15) & ~15;
-    enc->video_param.mfx.FrameInfo.CropH = (height + 15) & ~15;
     enc->video_param.mfx.FrameInfo.Width = (width + 15) & ~15;
     enc->video_param.mfx.FrameInfo.Height = (height + 15) & ~15;
     status = MFXVideoENCODE_Query(enc->session, &(enc->video_param),
@@ -587,6 +585,7 @@ mssva_encoder_encode(void *obj, void *cdata, int *cdata_max_bytes)
         /* fd_va_surface is RGB, must convert it to YUV */
         memset(&params, 0, sizeof(params));
         params.surface = enc->fd_va_surface[0];
+        params.output_color_standard = VAProcColorStandardBT601;
         va_status = vaCreateBuffer(g_va_display, g_vp_context,
                                    VAProcPipelineParameterBufferType,
                                    sizeof(params), 1, &params, buf);
@@ -632,11 +631,13 @@ mssva_encoder_encode(void *obj, void *cdata, int *cdata_max_bytes)
     bs.Data = (unsigned char *) cdata;
     status = MFXVideoENCODE_EncodeFrameAsync(enc->session, &ctrl,
                                              &surface, &bs, &syncp);
+    printf("MFXVideoENCODE_EncodeFrameAsync status %d syncp %p\n", status, syncp);
     if (status >= MFX_ERR_NONE)
     {
         if (syncp != NULL)
         {
             status = MFXVideoCORE_SyncOperation(enc->session, syncp, 1000);
+            printf("MFXVideoCORE_SyncOperation status %d\n", status);
             if (status != MFX_ERR_NONE)
             {
                 return MI_ERROR_MFXVIDEOCORE_SYNCOPERATION;
