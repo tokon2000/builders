@@ -1,0 +1,16 @@
+*.o
+*.lo
+*.la
+*.tar
+*.bz2
+*.gz
+yami/omatic/libyami/
+yami/omatic/libva-*
+yami/omatic/libdrm-*
+yami/omatic/intel-vaapi-driver-*
+mssva/omatic/libva-*
+mssva/omatic/libdrm-*
+AUTHORS
+NEWS
+README
+Makefile
