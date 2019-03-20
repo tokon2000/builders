@@ -134,7 +134,7 @@ frame_alloc(mfxHDL pthis, mfxFrameAllocRequest *request,
     VAStatus va_status;
     int index;
 
-    enc = (struct mssva_inf_enc_priv*)pthis;
+    enc = (struct mssva_inf_enc_priv *) pthis;
     if ((request->Type & MFX_MEMTYPE_INTERNAL_FRAME) &&
         (request->Type & MFX_MEMTYPE_FROM_ENCODE))
     {
@@ -196,7 +196,7 @@ frame_free(mfxHDL pthis, mfxFrameAllocResponse *response)
 
     for (index = response->NumFrameActual - 1; index >= 0; index--)
     {
-        sur = *((VASurfaceID*)(response->mids[index]));
+        sur = *((VASurfaceID *) (response->mids[index]));
         vaDestroySurfaces(g_va_display, &sur, 1);
     }
     return MFX_ERR_NONE;
