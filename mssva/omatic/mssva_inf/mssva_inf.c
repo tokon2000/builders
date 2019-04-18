@@ -213,6 +213,8 @@ mssva_encoder_create(void **obj, int width, int height, int type, int flags)
     mfxVersion version;
     mfxIMPL imp;
     mfxStatus status;
+    mfxExtCodingOption eco;
+    mfxExtBuffer *ecop[2];
 
     enc = (struct mssva_inf_enc_priv *)
           calloc(1, sizeof(struct mssva_inf_enc_priv));
@@ -321,6 +323,15 @@ mssva_encoder_create(void **obj, int width, int height, int type, int flags)
     /* low latency, I and P frames only */
     enc->video_param.mfx.GopRefDist = 1;
     enc->video_param.mfx.NumSlice = 1;
+    /* turn off AUD in NALU */
+    memset(&eco, 0, sizeof(eco));
+    eco.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
+    eco.Header.BufferSz = sizeof(eco);
+    eco.AUDelimiter = MFX_CODINGOPTION_OFF;
+    ecop[0] = &(eco.Header);
+    ecop[1] = NULL;
+    enc->video_param.ExtParam = ecop;
+    enc->video_param.NumExtParam = 1;
     enc->video_param_out = enc->video_param;
     status = MFXVideoENCODE_Query(enc->session, &(enc->video_param),
                                   &(enc->video_param_out));
