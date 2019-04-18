@@ -25,6 +25,8 @@ struct mssva_inf_enc_priv
     mfxSession session;
     mfxVideoParam video_param;
     mfxVideoParam video_param_out;
+    mfxExtCodingOption eco;
+    mfxExtBuffer *ecop[2];
     mfxFrameAllocRequest fa_request;
     mfxFrameAllocator frame_allocator;
     VASurfaceID va_surfaces[16];
@@ -213,8 +215,6 @@ mssva_encoder_create(void **obj, int width, int height, int type, int flags)
     mfxVersion version;
     mfxIMPL imp;
     mfxStatus status;
-    mfxExtCodingOption eco;
-    mfxExtBuffer *ecop[2];
 
     enc = (struct mssva_inf_enc_priv *)
           calloc(1, sizeof(struct mssva_inf_enc_priv));
@@ -324,13 +324,13 @@ mssva_encoder_create(void **obj, int width, int height, int type, int flags)
     enc->video_param.mfx.GopRefDist = 1;
     enc->video_param.mfx.NumSlice = 1;
     /* turn off AUD in NALU */
-    memset(&eco, 0, sizeof(eco));
-    eco.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
-    eco.Header.BufferSz = sizeof(eco);
-    eco.AUDelimiter = MFX_CODINGOPTION_OFF;
-    ecop[0] = &(eco.Header);
-    ecop[1] = NULL;
-    enc->video_param.ExtParam = ecop;
+    memset(&(enc->eco), 0, sizeof(enc->eco));
+    enc->eco.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
+    enc->eco.Header.BufferSz = sizeof(enc->eco);
+    enc->eco.AUDelimiter = MFX_CODINGOPTION_OFF;
+    enc->ecop[0] = &(enc->eco.Header);
+    enc->ecop[1] = NULL;
+    enc->video_param.ExtParam = enc->ecop;
     enc->video_param.NumExtParam = 1;
     enc->video_param_out = enc->video_param;
     status = MFXVideoENCODE_Query(enc->session, &(enc->video_param),
