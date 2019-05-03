@@ -324,7 +324,6 @@ mssva_encoder_create(void **obj, int width, int height, int type, int flags)
     enc->video_param.mfx.GopRefDist = 1;
     enc->video_param.mfx.NumSlice = 1;
     /* turn off AUD in NALU */
-    memset(&(enc->eco), 0, sizeof(enc->eco));
     enc->eco.Header.BufferId = MFX_EXTBUFF_CODING_OPTION;
     enc->eco.Header.BufferSz = sizeof(enc->eco);
     enc->eco.AUDelimiter = MFX_CODINGOPTION_OFF;
@@ -427,12 +426,31 @@ mssva_encoder_resize(void *obj, int width, int height)
     mfxStatus status;
 
     enc = (struct mssva_inf_enc_priv *) obj;
-    enc->video_param_out.mfx.FrameInfo.Width = (width + 15) & ~15;
-    enc->video_param_out.mfx.FrameInfo.Height = (height + 15) & ~15;
-    status = MFXVideoENCODE_Reset(enc->session, &(enc->video_param_out));
+    status = MFXVideoENCODE_Close(enc->session);
     if (status != MFX_ERR_NONE)
     {
-        return MI_ERROR_MFXVIDEOENCODE_RESET;
+        return MI_ERROR_MFXVIDEOENCODE_CLOSE;
+    }
+    enc->video_param.mfx.FrameInfo.Width = (width + 15) & ~15;
+    enc->video_param.mfx.FrameInfo.Height = (height + 15) & ~15;
+    status = MFXVideoENCODE_Query(enc->session, &(enc->video_param),
+                                  &(enc->video_param_out));
+    if (status != MFX_ERR_NONE)
+    {
+        return MI_ERROR_MFXVIDEOENCODE_QUERY;
+    }
+    status = MFXVideoENCODE_QueryIOSurf(enc->session,
+                                        &(enc->video_param_out),
+                                        &(enc->fa_request));
+    if (status != MFX_ERR_NONE)
+    {
+        return MI_ERROR_MFXVIDEOENCODE_QUERYIOSURF;
+    }
+    status = MFXVideoENCODE_Init(enc->session, &(enc->video_param_out));
+    if (status != MFX_ERR_NONE)
+    {
+        return MI_ERROR_MFXVIDEOENCODE_INIT;
+
     }
     va_status = vaDestroyImage(g_va_display, enc->va_image[0].image_id);
     if (va_status != VA_STATUS_SUCCESS)
