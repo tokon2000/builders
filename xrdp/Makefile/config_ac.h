@@ -29,5 +29,7 @@
 #define XRDP_PID_PATH "/var/run"
 #define XRDP_SHARE_PATH "/usr/share"
 #define XRDP_MODULE_PATH "/usr/local/lib/xrdp"
+#define XRDP_SBIN_PATH "/usr/local/sbin"
+#define XRDP_SYSCONF_PATH "/etc/xrdp"
 
 #endif
