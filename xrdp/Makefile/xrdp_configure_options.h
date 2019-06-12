@@ -1,0 +1,1 @@
+#define XRDP_CONFIGURE_OPTIONS ""
