@@ -19,4 +19,4 @@ clean:
 	$(CC) $(CFLAGS) -c $^
 
 install:
-	install libxrdp.so  $(XRDP_INSTALL_PATH)
+	install -D libxrdp.so $(XRDP_INSTALL_PATH)/lib/xrdp/libxrdp.so

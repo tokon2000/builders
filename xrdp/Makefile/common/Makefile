@@ -18,4 +18,4 @@ clean:
 	$(CC) $(CFLAGS) -c $^
 
 install:
-	install libcommon.so  $(XRDP_INSTALL_PATH)
+	install -D libcommon.so $(XRDP_INSTALL_PATH)/lib/xrdp/libcommon.so

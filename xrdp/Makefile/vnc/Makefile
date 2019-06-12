@@ -17,4 +17,4 @@ clean:
 	$(CC) $(CFLAGS) -c $^
 
 install:
-	install libvnc.so  $(XRDP_INSTALL_PATH)
+	install -D libvnc.so $(XRDP_INSTALL_PATH)/lib/xrdp/libvnc.so

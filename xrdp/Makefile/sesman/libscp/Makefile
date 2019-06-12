@@ -18,4 +18,4 @@ clean:
 	$(CC) $(CFLAGS) -c $^
 
 install:
-	install libscp.so  $(XRDP_INSTALL_PATH)
+	install -D libscp.so $(XRDP_INSTALL_PATH)/lib/xrdp/libscp.so

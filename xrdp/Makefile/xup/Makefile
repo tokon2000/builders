@@ -17,4 +17,4 @@ clean:
 	$(CC) $(CFLAGS) -c $^
 
 install:
-	install libxup.so  $(XRDP_INSTALL_PATH)
+	install -D libxup.so $(XRDP_INSTALL_PATH)/lib/xrdp/libxup.so

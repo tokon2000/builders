@@ -1,27 +1,34 @@
 
 include ../Makefile.inc
 
-OBJS = access.o scp_v0.o session.o config.o scp_v1_mng.o sig.o env.o scp_v1.o verify_user_pam.o scp.o sesman.o xauth.o
+OBJS = access.o scp_v0.o session.o config.o scp_v1_mng.o sig.o env.o scp_v1.o \
+verify_user_pam.o scp.o sesman.o xauth.o
 
-CFLAGS = -Wall -O2 -fPIC -DHAVE_CONFIG_H -I.. -I$(XRDP_TOP_SRC_PATH)/common -I$(XRDP_TOP_SRC_PATH)/sesman/libscp
+CFLAGS = -Wall -O2 -fPIC -DHAVE_CONFIG_H -I.. -I$(XRDP_TOP_SRC_PATH)/common \
+-I$(XRDP_TOP_SRC_PATH)/sesman/libscp
 
 LDFLAGS = -L../common -lcommon -Llibscp -lscp -lpthread -lpam
 
-all: libscp/libscp.so sesman
+all: libscp/libscp.so xrdp-sesman chansrv/xrdp-chansrv
 
 libscp/libscp.so:
 	$(MAKE) -C libscp
 
+chansrv/xrdp-chansrv:
+	$(MAKE) -C chansrv
+
 clean:
 	$(MAKE) -C libscp clean
-	rm -f sesman $(OBJS)
+	$(MAKE) -C chansrv clean
+	rm -f xrdp-sesman $(OBJS)
 
 install:
 	$(MAKE) -C libscp install
-	install sesman  $(XRDP_INSTALL_PATH)
+	$(MAKE) -C chansrv install
+	install -D xrdp-sesman $(XRDP_INSTALL_PATH)/sbin/xrdp-sesman
 
-sesman: $(OBJS)
-	$(CC) -o sesman $(OBJS) $(LDFLAGS)
+xrdp-sesman: $(OBJS)
+	$(CC) -o xrdp-sesman $(OBJS) $(LDFLAGS)
 
 %.o: $(XRDP_TOP_SRC_PATH)/sesman/%.c
 	$(CC) $(CFLAGS) -c $^
