@@ -22,7 +22,7 @@
 #define HAVE__PAM_TYPES_H 1
 
 #define XRDP_LOG_PATH "/tmp"
-#define PACKAGE_VERSION "0.9.4"
+#define PACKAGE_VERSION "0.9.10"
 
 #define XRDP_SOCKET_PATH "/tmp/.xrdp"
 #define XRDP_CFG_PATH "/etc/xrdp"

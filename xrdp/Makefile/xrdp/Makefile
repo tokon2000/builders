@@ -1,5 +1,5 @@
 
-XRDP_TOP_SRC_PATH = ../../../../xrdp
+include ../Makefile.inc
 
 OBJS = xrdp.o xrdp_listen.o xrdp_process.o xrdp_region.o xrdp_wm.o \
 xrdp_painter.o xrdp_bitmap.o funcs.o lang.o xrdp_cache.o xrdp_mm.o \
@@ -17,4 +17,7 @@ clean:
 
 %.o: $(XRDP_TOP_SRC_PATH)/xrdp/%.c
 	$(CC) $(CFLAGS) -c $^
+
+install:
+	install xrdp  $(XRDP_INSTALL_PATH)
 

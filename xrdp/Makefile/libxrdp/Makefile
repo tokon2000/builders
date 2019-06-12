@@ -1,5 +1,5 @@
 
-XRDP_TOP_SRC_PATH = ../../../../xrdp
+include ../Makefile.inc
 
 OBJS = libxrdp.o xrdp_rdp.o xrdp_sec.o xrdp_mcs.o xrdp_iso.o xrdp_orders.o \
 xrdp_orders_rail.o xrdp_fastpath.o xrdp_jpeg_compress.o xrdp_channel.o \
@@ -18,3 +18,5 @@ clean:
 %.o: $(XRDP_TOP_SRC_PATH)/libxrdp/%.c
 	$(CC) $(CFLAGS) -c $^
 
+install:
+	install libxrdp.so  $(XRDP_INSTALL_PATH)
