@@ -8,7 +8,10 @@ xrdp_font.o xrdp_encoder.o xrdp_login_wnd.o
 CFLAGS = -Wall -O2 -fPIC -DHAVE_CONFIG_H -I.. -I$(XRDP_TOP_SRC_PATH)/common \
 -I$(XRDP_TOP_SRC_PATH)/libxrdp
 
-LDFLAGS = -L../common -lcommon -L../libxrdp -lxrdp
+LDFLAGS = -L../common -lcommon -L../libxrdp -lxrdp \
+-Wl,--rpath,$(XRDP_INSTALL_PATH)/lib/xrdp
+
+all: xrdp
 
 xrdp: $(OBJS)
 	$(CC) -o xrdp $(OBJS) $(LDFLAGS)
@@ -21,3 +24,4 @@ clean:
 
 install:
 	install -D xrdp $(XRDP_INSTALL_PATH)/sbin/xrdp
+	install -D $(XRDP_TOP_SRC_PATH)/xrdp/xrdp.ini $(XRDP_INSTALL_PATH)/etc/xrdp/xrdp.ini
