@@ -10,9 +10,9 @@ SHOW_HELP=0
 ENABLE_X11=0
 GOT_PARAM=0
 
-LIBDRM_SRC_NAME="libdrm-2.4.91"
-LIBVA_SRC_NAME="libva-2.3.0"
-LIBVAUTILS_SRC_NAME="libva-utils-2.2.0"
+LIBDRM_SRC_NAME="libdrm-2.4.100"
+LIBVA_SRC_NAME="libva-2.5.0"
+LIBVAUTILS_SRC_NAME="libva-utils-2.5.0"
 LIBVA_INTER_DRIVER_SRC_NAME="intel-vaapi-driver-2.3.0"
 
 LIBYAMI_INF_CONFIG=
@@ -234,7 +234,7 @@ cd libyami
 #git checkout 1.1.0
 #git checkout 1.2.0
 #git checkout 1.3.0
-git checkout 1.3.1
+git checkout 1.3.2
 #git checkout libyami-0.3.1
 #git checkout fix_low_latency
 ./autogen.sh
