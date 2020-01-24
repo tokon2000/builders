@@ -610,6 +610,15 @@ yami_decoder_create(void **obj, int width, int height, int type, int flags)
             return YI_ERROR_CREATEDECODER;
         }
     }
+    else if (type == YI_TYPE_MPEG2)
+    {
+        dec->decoder = createDecoder(YAMI_MIME_MPEG2);
+        if (dec->decoder == NULL)
+        {
+            free(dec);
+            return YI_ERROR_CREATEDECODER;
+        }
+    }
     else
     {
         free(dec);
@@ -750,4 +759,28 @@ yami_decoder_get_pixmap(void *obj, void* display,
 #else
     return YI_ERROR_UNIMP;
 #endif
+}
+
+/*****************************************************************************/
+int
+yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
+                        int *fd_stride, int *fd_size, int *fd_bpp)
+{
+    struct yami_inf_dec_priv *dec;
+    VideoFrame *vf;
+    VAStatus va_status;
+
+    dec = (struct yami_inf_dec_priv *) obj;
+    vf = decodeGetOutput(dec->decoder);
+    if (vf == NULL)
+    {
+        return YI_ERROR_DECODEGETOUTPUT;
+    }
+    if (vf->surface == 0)
+    {
+        vf->free(vf);
+        return YI_ERROR_DECODEGETOUTPUT;
+    }
+    vf->free(vf);
+    return YI_SUCCESS;
 }

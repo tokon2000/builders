@@ -33,6 +33,7 @@
 #define YI_ERROR_DECODEGETFORMATINFO    304
 
 #define YI_TYPE_H264                    1
+#define YI_TYPE_MPEG2                   2
 
 #define YI_H264_ENC_FLAGS_PROFILE_MASK  0x0000000F
 #define YI_H264_ENC_FLAGS_PROFILE_MAIN  (1 << 0)
@@ -79,5 +80,8 @@ yami_decoder_decode(void *obj, void *cdata, int cdata_bytes);
 int
 yami_decoder_get_pixmap(void *obj, void* display,
                         int width, int height, int *pixmap);
+int
+yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
+                        int *fd_stride, int *fd_size, int *fd_bpp);
 
 #endif
