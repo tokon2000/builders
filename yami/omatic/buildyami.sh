@@ -5,7 +5,7 @@ LIBDRM_CONFIG="--disable-radeon --disable-amdgpu --disable-nouveau --disable-vmw
 LIBVA_CONFIG="--disable-x11 --disable-wayland"
 LIBVAUTILS_CONFIG="--disable-x11 --disable-wayland"
 LIBVA_INTER_DRIVER_CONFIG="--disable-x11 --disable-wayland"
-LIBYAMI_CONFIG="--disable-jpegdec --disable-vp8dec --disable-h265dec --enable-capi --disable-x11"
+LIBYAMI_CONFIG="--disable-jpegdec --disable-vp8dec --disable-h265dec --enable-capi --disable-x11 --enable-mpeg2dec"
 SHOW_HELP=0
 ENABLE_X11=0
 GOT_PARAM=0
@@ -57,7 +57,7 @@ then
     LIBVA_CONFIG="--enable-x11 --disable-wayland"
     LIBVAUTILS_CONFIG="--enable-x11 --disable-wayland"
     LIBVA_INTER_DRIVER_CONFIG="--enable-x11 --disable-wayland"
-    LIBYAMI_CONFIG="--disable-jpegdec --disable-vp8dec --disable-h265dec --enable-capi --enable-x11"
+    LIBYAMI_CONFIG="--disable-jpegdec --disable-vp8dec --disable-h265dec --enable-capi --enable-x11 --enable-mpeg2dec"
     LIBYAMI_INF_CONFIG="--enable-x11"
 fi
 
