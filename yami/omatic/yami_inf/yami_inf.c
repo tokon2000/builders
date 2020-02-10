@@ -68,6 +68,10 @@ struct yami_inf_dec_priv
     int pixmap;
     int pixmap_width;
     int pixmap_height;
+    VAContextID surface_ctx;
+    VASurfaceID surface;
+    int surface_width;
+    int surface_height;
     void *display;
 };
 
@@ -666,6 +670,14 @@ yami_decoder_delete(void *obj)
 #endif
     }
     releaseDecoder(dec->decoder);
+    if (dec->surface_ctx != 0)
+    {
+        vaDestroyContext(g_va_display, dec->surface_ctx);
+    }
+    if (dec->surface != 0)
+    {
+        vaDestroySurfaces(g_va_display, &dec->surface, 1);
+    }
     free(dec);
     return YI_SUCCESS;
 }
@@ -782,8 +794,6 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
     VABufferType buf_type;
     void *buf;
     VADRMPRIMESurfaceDescriptor drm_desc;
-    VAContextID surface_ctx;
-    VASurfaceID surface;
 
     dec = (struct yami_inf_dec_priv *) obj;
     vf = decodeGetOutput(dec->decoder);
@@ -796,39 +806,54 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
         vf->free(vf);
         return YI_ERROR_DECODEGETOUTPUT;
     }
-    memset(&forcc, 0, sizeof(forcc));
-    forcc.type = VASurfaceAttribPixelFormat;
-    forcc.flags = VA_SURFACE_ATTRIB_SETTABLE;
-    forcc.value.type = VAGenericValueTypeInteger;
-    forcc.value.value.i = VA_FOURCC_BGRX;
-    va_status = vaCreateSurfaces(g_va_display, VA_RT_FORMAT_RGB32,
-                                 dec->vfi.surfaceWidth,
-                                 dec->vfi.surfaceHeight,
-                                 &surface, 1, &forcc, 1);
-    if (va_status != VA_STATUS_SUCCESS)
+    if ((dec->surface_width != dec->vfi.width) ||
+        (dec->surface_height != dec->vfi.height))
     {
-        vf->free(vf);
-        return YI_ERROR_VACREATESURFACES;
-    }
-    va_status = vaCreateContext(g_va_display, g_vp_config,
-                                dec->vfi.surfaceWidth,
-                                dec->vfi.surfaceHeight,
-                                VA_PROGRESSIVE, &surface, 1,
-                                &surface_ctx);
-    if (va_status != VA_STATUS_SUCCESS)
-    {
-        vaDestroySurfaces(g_va_display, &surface, 1);
-        vf->free(vf);
-        return YI_ERROR_VACREATECONTEXT;
+        if (dec->surface_ctx != 0)
+        {
+            vaDestroyContext(g_va_display, dec->surface_ctx);
+        }
+        if (dec->surface != 0)
+        {
+            vaDestroySurfaces(g_va_display, &dec->surface, 1);
+        }
+        dec->surface_ctx = 0;
+        dec->surface = 0;
+        memset(&forcc, 0, sizeof(forcc));
+        forcc.type = VASurfaceAttribPixelFormat;
+        forcc.flags = VA_SURFACE_ATTRIB_SETTABLE;
+        forcc.value.type = VAGenericValueTypeInteger;
+        forcc.value.value.i = VA_FOURCC_BGRX;
+        va_status = vaCreateSurfaces(g_va_display, VA_RT_FORMAT_RGB32,
+                                     dec->vfi.width,
+                                     dec->vfi.height,
+                                     &dec->surface, 1, &forcc, 1);
+        if (va_status != VA_STATUS_SUCCESS)
+        {
+            vf->free(vf);
+            return YI_ERROR_VACREATESURFACES;
+        }
+        va_status = vaCreateContext(g_va_display, g_vp_config,
+                                    dec->vfi.width,
+                                    dec->vfi.height,
+                                    VA_PROGRESSIVE, &dec->surface, 1,
+                                    &dec->surface_ctx);
+        if (va_status != VA_STATUS_SUCCESS)
+        {
+            vaDestroySurfaces(g_va_display, &dec->surface, 1);
+            dec->surface = 0;
+            vf->free(vf);
+            return YI_ERROR_VACREATECONTEXT;
+        }
+        dec->surface_width = dec->vfi.width;
+        dec->surface_height = dec->vfi.height;
     }
     buf_type = VAProcPipelineParameterBufferType;
     bytes = sizeof(VAProcPipelineParameterBuffer);
-    va_status = vaCreateBuffer(g_va_display, surface_ctx, buf_type,
+    va_status = vaCreateBuffer(g_va_display, dec->surface_ctx, buf_type,
                                bytes, 1, NULL, &pipeline_buf);
     if (va_status != VA_STATUS_SUCCESS)
     {
-        vaDestroyContext(g_va_display, surface_ctx);
-        vaDestroySurfaces(g_va_display, &surface, 1);
         vf->free(vf);
         return YI_ERROR_VACREATEBUFFER;
     }
@@ -836,8 +861,6 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
     va_status = vaMapBuffer(g_va_display, pipeline_buf, &buf);
     if (va_status != VA_STATUS_SUCCESS)
     {
-        vaDestroyContext(g_va_display, surface_ctx);
-        vaDestroySurfaces(g_va_display, &surface, 1);
         vaDestroyBuffer(g_va_display, pipeline_buf);
         vf->free(vf);
         return YI_ERROR_VAMAPBUFFER;
@@ -846,39 +869,31 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
     memset(pipeline_param, 0, sizeof(VAProcPipelineParameterBuffer));
     pipeline_param->surface = vf->surface;
     vaUnmapBuffer(g_va_display, pipeline_buf);
-    va_status = vaBeginPicture(g_va_display, surface_ctx, surface);
+    va_status = vaBeginPicture(g_va_display, dec->surface_ctx, dec->surface);
     if (va_status != VA_STATUS_SUCCESS)
     {
-        vaDestroyContext(g_va_display, surface_ctx);
-        vaDestroySurfaces(g_va_display, &surface, 1);
         vaDestroyBuffer(g_va_display, pipeline_buf);
         vf->free(vf);
         return YI_ERROR_VABEGINPICTURE;
     }
-    va_status = vaRenderPicture(g_va_display, surface_ctx,
+    va_status = vaRenderPicture(g_va_display, dec->surface_ctx,
                                 &pipeline_buf, 1);
     if (va_status != VA_STATUS_SUCCESS)
     {
-        vaDestroyContext(g_va_display, surface_ctx);
-        vaDestroySurfaces(g_va_display, &surface, 1);
         vaDestroyBuffer(g_va_display, pipeline_buf);
         vf->free(vf);
         return YI_ERROR_VARENDERPICTURE;
     }
-    va_status = vaEndPicture(g_va_display, surface_ctx);
+    va_status = vaEndPicture(g_va_display, dec->surface_ctx);
     if (va_status != VA_STATUS_SUCCESS)
     {
-        vaDestroyContext(g_va_display, surface_ctx);
-        vaDestroySurfaces(g_va_display, &surface, 1);
         vaDestroyBuffer(g_va_display, pipeline_buf);
         vf->free(vf);
         return YI_ERROR_VAENDPICTURE;
     }
-    va_status = vaSyncSurface(g_va_display, surface);
+    va_status = vaSyncSurface(g_va_display, dec->surface);
     if (va_status != VA_STATUS_SUCCESS)
     {
-        vaDestroyContext(g_va_display, surface_ctx);
-        vaDestroySurfaces(g_va_display, &surface, 1);
         vaDestroyBuffer(g_va_display, pipeline_buf);
         vf->free(vf);
         return YI_ERROR_VASYNCSURFACE;
@@ -886,11 +901,9 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
     vaDestroyBuffer(g_va_display, pipeline_buf);
     vf->free(vf);
     memset(&drm_desc, 0, sizeof(drm_desc));
-    va_status = vaExportSurfaceHandle(g_va_display, surface,
+    va_status = vaExportSurfaceHandle(g_va_display, dec->surface,
                                       VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
                                       0, &drm_desc);
-    vaDestroyContext(g_va_display, surface_ctx);
-    vaDestroySurfaces(g_va_display, &surface, 1);
     if (va_status != VA_STATUS_SUCCESS)
     {
         return YI_ERROR_VAEXPORTSURFACE;
