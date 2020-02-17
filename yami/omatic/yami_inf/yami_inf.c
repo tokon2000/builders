@@ -686,6 +686,14 @@ yami_decoder_delete(void *obj)
 int
 yami_decoder_decode(void *obj, void *cdata, int cdata_bytes)
 {
+    return yami_decoder_decode_time(obj, cdata, cdata_bytes, 0);
+}
+
+/*****************************************************************************/
+int
+yami_decoder_decode_time(void *obj, void *cdata, int cdata_bytes,
+                         YI_INT64 time)
+{
     struct yami_inf_dec_priv *dec;
     YamiStatus yami_status;
     VideoDecodeBuffer ib;
@@ -696,6 +704,7 @@ yami_decoder_decode(void *obj, void *cdata, int cdata_bytes)
     ib.data = cdata;
     ib.size = cdata_bytes;
     ib.flag = VIDEO_DECODE_BUFFER_FLAG_FRAME_END;
+    ib.timeStamp = time;
     yami_status = decodeDecode(dec->decoder, &ib);
     if (yami_status == YAMI_DECODE_FORMAT_CHANGE)
     {
@@ -779,7 +788,8 @@ yami_decoder_get_pixmap(void *obj, void* display,
 /*****************************************************************************/
 int
 yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
-                        int *fd_stride, int *fd_size, int *fd_bpp)
+                        int *fd_stride, int *fd_size, int *fd_bpp,
+                        YI_INT64* fd_time)
 {
     struct yami_inf_dec_priv *dec;
     VideoFrame *vf;
@@ -794,6 +804,7 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
     VABufferType buf_type;
     void *buf;
     VADRMPRIMESurfaceDescriptor drm_desc;
+    YI_INT64 time;
 
     dec = (struct yami_inf_dec_priv *) obj;
     vf = decodeGetOutput(dec->decoder);
@@ -899,6 +910,7 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
         return YI_ERROR_VASYNCSURFACE;
     }
     vaDestroyBuffer(g_va_display, pipeline_buf);
+    time = vf->timeStamp;
     vf->free(vf);
     memset(&drm_desc, 0, sizeof(drm_desc));
     va_status = vaExportSurfaceHandle(g_va_display, dec->surface,
@@ -922,5 +934,6 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
     *fd_stride = drm_desc.layers[0].pitch[0];
     *fd_size = drm_desc.objects[0].size;
     *fd_bpp = 0;
+    *fd_time = time;
     return YI_SUCCESS;
 }

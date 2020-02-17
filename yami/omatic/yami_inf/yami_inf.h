@@ -2,6 +2,8 @@
 #if !defined( __YAMI_INF_H__)
 #define __YAMI_INF_H__ 1
 
+#define YI_INT64 long long
+
 #define YI_MAJOR                        0
 #define YI_MINOR                        1
 
@@ -83,10 +85,14 @@ yami_decoder_delete(void *obj);
 int
 yami_decoder_decode(void *obj, void *cdata, int cdata_bytes);
 int
+yami_decoder_decode_time(void *obj, void *cdata, int cdata_bytes,
+                         YI_INT64 time);
+int
 yami_decoder_get_pixmap(void *obj, void* display,
                         int width, int height, int *pixmap);
 int
 yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
-                        int *fd_stride, int *fd_size, int *fd_bpp);
+                        int *fd_stride, int *fd_size, int *fd_bpp,
+                        YI_INT64* fd_time);
 
 #endif
