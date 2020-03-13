@@ -95,4 +95,16 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
                         int *fd_stride, int *fd_size, int *fd_bpp,
                         YI_INT64* fd_time);
 
+int
+yami_surface_create(void **obj, int width, int height, int type, int flags);
+int
+yami_surface_delete(void *obj);
+int
+yami_surface_get_ybuffer(void *obj, void **ydata, int *ydata_stride_bytes);
+int
+yami_surface_get_uvbuffer(void *obj, void **uvdata, int *uvdata_stride_bytes);
+int
+yami_surface_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
+                        int *fd_stride, int *fd_size, int *fd_bpp);
+
 #endif

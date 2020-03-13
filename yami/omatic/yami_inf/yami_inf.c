@@ -75,6 +75,19 @@ struct yami_inf_dec_priv
     void *display;
 };
 
+struct yami_inf_sur_priv
+{
+    int width;
+    int height;
+    int type;
+    int flags;
+    VAImage yuv_image;
+    VASurfaceID yuv_surface;
+    VAContextID rgb_surface_ctx;
+    VASurfaceID rgb_surface;
+    char *yuvdata;
+};
+
 /*****************************************************************************/
 int
 yami_get_version(int *version)
@@ -935,5 +948,243 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
     *fd_size = drm_desc.objects[0].size;
     *fd_bpp = 0;
     *fd_time = time;
+    return YI_SUCCESS;
+}
+
+/*****************************************************************************/
+int
+yami_surface_create(void **obj, int width, int height, int type, int flags)
+{
+    struct yami_inf_sur_priv *sur;
+    VASurfaceAttrib attribs;
+    VAStatus va_status;
+    VAImageFormat va_image_format;
+
+    sur = (struct yami_inf_sur_priv *)
+          calloc(1, sizeof(struct yami_inf_sur_priv));
+    if (sur == NULL)
+    {
+        return YI_ERROR_MEMORY;
+    }
+    memset(&attribs, 0, sizeof(attribs));
+    attribs.type = VASurfaceAttribPixelFormat;
+    attribs.flags = VA_SURFACE_ATTRIB_SETTABLE;
+    attribs.value.type = VAGenericValueTypeInteger;
+    attribs.value.value.i = VA_FOURCC_NV12;
+    va_status = vaCreateSurfaces(g_va_display, VA_RT_FORMAT_YUV420,
+                                 width, height,
+                                 &(sur->yuv_surface), 1, &attribs, 1);
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        free(sur);
+        return YI_ERROR_VACREATESURFACES;
+    }
+    memset(&va_image_format, 0, sizeof(va_image_format));
+    va_image_format.fourcc = VA_FOURCC_NV12;
+    va_status = vaCreateImage(g_va_display, &va_image_format,
+                              width, height, &(sur->yuv_image));
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        vaDestroySurfaces(g_va_display, &(sur->yuv_surface), 1);
+        free(sur);
+        return YI_ERROR_VACREATEIMAGE;
+    }
+
+    memset(&attribs, 0, sizeof(attribs));
+    attribs.type = VASurfaceAttribPixelFormat;
+    attribs.flags = VA_SURFACE_ATTRIB_SETTABLE;
+    attribs.value.type = VAGenericValueTypeInteger;
+    attribs.value.value.i = VA_FOURCC_BGRX;
+    va_status = vaCreateSurfaces(g_va_display, VA_RT_FORMAT_RGB32,
+                                 width, height,
+                                 &(sur->rgb_surface), 1, &attribs, 1);
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        vaDestroyImage(g_va_display, sur->yuv_image.image_id);
+        vaDestroySurfaces(g_va_display, &(sur->yuv_surface), 1);
+        free(sur);
+        return YI_ERROR_VACREATESURFACES;
+    }
+    va_status = vaCreateContext(g_va_display, g_vp_config,
+                                width, height,
+                                VA_PROGRESSIVE, &(sur->rgb_surface), 1,
+                                &(sur->rgb_surface_ctx));
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        vaDestroySurfaces(g_va_display, &(sur->rgb_surface), 1);
+        vaDestroyImage(g_va_display, sur->yuv_image.image_id);
+        vaDestroySurfaces(g_va_display, &(sur->yuv_surface), 1);
+        free(sur);
+        return YI_ERROR_VACREATECONTEXT;
+    }
+    sur->width = width;
+    sur->height = height;
+    sur->type = type;
+    sur->flags = flags;
+    *obj = sur;
+    return YI_SUCCESS;
+}
+
+/*****************************************************************************/
+int
+yami_surface_delete(void *obj)
+{
+    struct yami_inf_sur_priv *sur;
+
+    sur = (struct yami_inf_sur_priv *) obj;
+    if (sur == NULL)
+    {
+        return YI_SUCCESS;
+    }
+    vaDestroyContext(g_va_display, sur->rgb_surface_ctx);
+    vaDestroySurfaces(g_va_display, &(sur->rgb_surface), 1);
+    vaDestroyImage(g_va_display, sur->yuv_image.image_id);
+    vaDestroySurfaces(g_va_display, &(sur->yuv_surface), 1);
+    free(sur);
+    return YI_SUCCESS;
+}
+
+/*****************************************************************************/
+int
+yami_surface_get_ybuffer(void *obj, void **ydata, int *ydata_stride_bytes)
+{
+    struct yami_inf_sur_priv *sur;
+    VAStatus va_status;
+    void *buf_ptr;
+
+    sur = (struct yami_inf_sur_priv *) obj;
+    if (sur->yuvdata == NULL)
+    {
+        va_status = vaMapBuffer(g_va_display, sur->yuv_image.buf, &buf_ptr);
+        if (va_status != VA_STATUS_SUCCESS)
+        {
+            return YI_ERROR_VAMAPBUFFER;
+        }
+        sur->yuvdata = (char *) buf_ptr;
+    }
+    *ydata = sur->yuvdata + sur->yuv_image.offsets[0];
+    *ydata_stride_bytes = sur->yuv_image.pitches[0];
+    return YI_SUCCESS;
+}
+
+/*****************************************************************************/
+int
+yami_surface_get_uvbuffer(void *obj, void **uvdata, int *uvdata_stride_bytes)
+{
+    struct yami_inf_sur_priv *sur;
+    VAStatus va_status;
+    void *buf_ptr;
+
+    sur = (struct yami_inf_sur_priv *) obj;
+    if (sur->yuvdata == NULL)
+    {
+        va_status = vaMapBuffer(g_va_display, sur->yuv_image.buf, &buf_ptr);
+        if (va_status != VA_STATUS_SUCCESS)
+        {
+            return YI_ERROR_VAMAPBUFFER;
+        }
+        sur->yuvdata = (char *) buf_ptr;
+    }
+    *uvdata = sur->yuvdata + sur->yuv_image.offsets[1];
+    *uvdata_stride_bytes = sur->yuv_image.pitches[1];
+    return YI_SUCCESS;
+}
+
+/*****************************************************************************/
+int
+yami_surface_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
+                        int *fd_stride, int *fd_size, int *fd_bpp)
+{
+    struct yami_inf_sur_priv *sur;
+    VAStatus va_status;
+    VAImage image;
+    VABufferInfo bufferInfo;
+    VASurfaceAttrib forcc;
+    int bytes;
+    int index;
+    VABufferID pipeline_buf;
+    VAProcPipelineParameterBuffer* pipeline_param;
+    VABufferType buf_type;
+    void *buf;
+    VADRMPRIMESurfaceDescriptor drm_desc;
+
+    sur = (struct yami_inf_sur_priv *) obj;
+    if (sur->yuvdata != NULL)
+    {
+        va_status = vaUnmapBuffer(g_va_display, sur->yuv_image.buf);
+        if (va_status != VA_STATUS_SUCCESS)
+        {
+            return YI_ERROR_VAUNMAPBUFFER;
+        }
+        sur->yuvdata = NULL;
+    }
+    buf_type = VAProcPipelineParameterBufferType;
+    bytes = sizeof(VAProcPipelineParameterBuffer);
+    va_status = vaCreateBuffer(g_va_display, sur->rgb_surface_ctx, buf_type,
+                               bytes, 1, NULL, &pipeline_buf);
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        return YI_ERROR_VACREATEBUFFER;
+    }
+    buf = NULL;
+    va_status = vaMapBuffer(g_va_display, pipeline_buf, &buf);
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        vaDestroyBuffer(g_va_display, pipeline_buf);
+        return YI_ERROR_VAMAPBUFFER;
+    }
+    pipeline_param = (VAProcPipelineParameterBuffer*)buf;
+    memset(pipeline_param, 0, sizeof(VAProcPipelineParameterBuffer));
+    pipeline_param->surface = sur->yuv_surface;
+    vaUnmapBuffer(g_va_display, pipeline_buf);
+    va_status = vaBeginPicture(g_va_display, sur->rgb_surface_ctx,
+                               sur->rgb_surface);
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        vaDestroyBuffer(g_va_display, pipeline_buf);
+        return YI_ERROR_VABEGINPICTURE;
+    }
+    va_status = vaRenderPicture(g_va_display, sur->rgb_surface_ctx,
+                                &pipeline_buf, 1);
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        vaDestroyBuffer(g_va_display, pipeline_buf);
+        return YI_ERROR_VARENDERPICTURE;
+    }
+    va_status = vaEndPicture(g_va_display, sur->rgb_surface_ctx);
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        vaDestroyBuffer(g_va_display, pipeline_buf);
+        return YI_ERROR_VAENDPICTURE;
+    }
+    va_status = vaSyncSurface(g_va_display, sur->rgb_surface);
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        vaDestroyBuffer(g_va_display, pipeline_buf);
+        return YI_ERROR_VASYNCSURFACE;
+    }
+    vaDestroyBuffer(g_va_display, pipeline_buf);
+    memset(&drm_desc, 0, sizeof(drm_desc));
+    va_status = vaExportSurfaceHandle(g_va_display, sur->rgb_surface,
+                                      VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
+                                      0, &drm_desc);
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        return YI_ERROR_VAEXPORTSURFACE;
+    }
+    if ((drm_desc.num_objects != 1) || (drm_desc.num_layers != 1))
+    {
+        for (index = 0; index < drm_desc.num_objects; index++)
+        {
+            close(drm_desc.objects[index].fd);
+        }
+        return YI_ERROR_OTHER;
+    }
+    *fd = drm_desc.objects[0].fd;
+    *fd_width = drm_desc.width;
+    *fd_height = drm_desc.height;
+    *fd_stride = drm_desc.layers[0].pitch[0];
+    *fd_size = drm_desc.objects[0].size;
+    *fd_bpp = 0;
     return YI_SUCCESS;
 }
