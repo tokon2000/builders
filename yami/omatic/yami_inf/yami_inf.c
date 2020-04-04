@@ -1118,6 +1118,14 @@ yami_surface_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
         }
         sur->yuvdata = NULL;
     }
+    va_status = vaPutImage(g_va_display, sur->yuv_surface,
+                           sur->yuv_image.image_id,
+                           0, 0, sur->width, sur->height,
+                           0, 0, sur->width, sur->height);
+    if (va_status != VA_STATUS_SUCCESS)
+    {
+        return YI_ERROR_VAPUTIMAGE;
+    }
     buf_type = VAProcPipelineParameterBufferType;
     bytes = sizeof(VAProcPipelineParameterBuffer);
     va_status = vaCreateBuffer(g_va_display, sur->rgb_surface_ctx, buf_type,
