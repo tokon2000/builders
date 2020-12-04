@@ -2,7 +2,9 @@
 #if !defined( __YAMI_INF_H__)
 #define __YAMI_INF_H__ 1
 
+#if !defined(YI_INT64)
 #define YI_INT64 long long
+#endif
 
 #define YI_MAJOR                        0
 #define YI_MINOR                        1
@@ -50,6 +52,11 @@
 #define YI_TYPE_X11                     2
 
 #define YI_H264_DEC_FLAG_LOWLATENCY     1
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 int
 yami_get_version(int *version);
@@ -106,5 +113,9 @@ yami_surface_get_uvbuffer(void *obj, void **uvdata, int *uvdata_stride_bytes);
 int
 yami_surface_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
                         int *fd_stride, int *fd_size, int *fd_bpp);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
