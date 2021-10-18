@@ -53,6 +53,8 @@ struct yami_inf_enc_priv
     int flags;
     VASurfaceID va_surface[1];
     VASurfaceID fd_va_surface[1];
+    int fd_yami_fourcc;
+    int pad0;
     VAImage va_image[1];
     char *yuvdata;
 };
@@ -523,10 +525,33 @@ yami_encoder_set_fd_src(void *obj, int fd, int fd_width, int fd_height,
     attribs[1].type = VASurfaceAttribExternalBufferDescriptor;
     attribs[1].value.type = VAGenericValueTypePointer;
     attribs[1].value.value.p = &external;
-    va_status = vaCreateSurfaces(g_va_display, VA_RT_FORMAT_RGB32,
-                                 fd_width, fd_height, &surface, 1,
-                                 attribs, 2);
-    if (va_status != 0)
+    switch (fd_bpp)
+    {
+        case YI_NV12:
+            external.pixel_format = VA_FOURCC_NV12;
+            external.num_planes = 2;
+            external.pitches[1] = fd_stride;
+            external.offsets[1] = fd_height * fd_stride;
+            va_status = vaCreateSurfaces(g_va_display, VA_RT_FORMAT_YUV420,
+                                         fd_width, fd_height, &surface, 1,
+                                         attribs, 2);
+            enc->fd_yami_fourcc = YAMI_FOURCC_NV12;
+            break;
+        case YI_YUY2:
+            external.pixel_format = VA_FOURCC_YUY2;
+            va_status = vaCreateSurfaces(g_va_display, VA_RT_FORMAT_YUV422,
+                                         fd_width, fd_height, &surface, 1,
+                                         attribs, 2);
+            enc->fd_yami_fourcc = YAMI_FOURCC_YUY2;
+            break;
+        default:
+            va_status = vaCreateSurfaces(g_va_display, VA_RT_FORMAT_RGB32,
+                                         fd_width, fd_height, &surface, 1,
+                                         attribs, 2);
+            enc->fd_yami_fourcc = YAMI_FOURCC_RGBX;
+            break;
+    }
+    if (va_status != VA_STATUS_SUCCESS)
     {
         return YI_ERROR_VACREATESURFACES;
     }
@@ -566,7 +591,7 @@ yami_encoder_encode(void *obj, void *cdata, int *cdata_max_bytes)
     if (enc->fd_va_surface[0] != 0)
     {
         yami_vf.surface = enc->fd_va_surface[0];
-        yami_vf.fourcc = YAMI_FOURCC_RGBX;
+        yami_vf.fourcc = enc->fd_yami_fourcc;
     }
     else
     {
@@ -1196,3 +1221,36 @@ yami_surface_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
     *fd_bpp = 0;
     return YI_SUCCESS;
 }
+
+/*****************************************************************************/
+int
+yami_get_funcs(struct yami_funcs *funcs)
+{
+    funcs->yami_get_version = yami_get_version;
+    funcs->yami_init = yami_init;
+    funcs->yami_deinit = yami_deinit;
+    /* encoder */
+    funcs->yami_encoder_create = yami_encoder_create;
+    funcs->yami_encoder_delete = yami_encoder_delete;
+    funcs->yami_encoder_get_width = yami_encoder_get_width;
+    funcs->yami_encoder_get_height = yami_encoder_get_height;
+    funcs->yami_encoder_resize = yami_encoder_resize;
+    funcs->yami_encoder_get_ybuffer = yami_encoder_get_ybuffer;
+    funcs->yami_encoder_get_uvbuffer = yami_encoder_get_uvbuffer;
+    funcs->yami_encoder_set_fd_src = yami_encoder_set_fd_src;
+    funcs->yami_encoder_encode = yami_encoder_encode;
+    /* decoder */
+    funcs->yami_decoder_create = yami_decoder_create;
+    funcs->yami_decoder_delete = yami_decoder_delete;
+    funcs->yami_decoder_decode = yami_decoder_decode;
+    funcs->yami_decoder_get_pixmap = yami_decoder_get_pixmap;
+    funcs->yami_decoder_get_fd_dst = yami_decoder_get_fd_dst;
+    /* surface */
+    funcs->yami_surface_create = yami_surface_create;
+    funcs->yami_surface_delete = yami_surface_delete;
+    funcs->yami_surface_get_ybuffer = yami_surface_get_ybuffer;
+    funcs->yami_surface_get_uvbuffer = yami_surface_get_uvbuffer;
+    funcs->yami_surface_get_fd_dst = yami_surface_get_fd_dst;
+    return YI_SUCCESS;
+}
+
