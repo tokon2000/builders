@@ -94,7 +94,7 @@ struct yami_inf_sur_priv
 int
 yami_get_version(int *version)
 {
-    *version = (YI_MAJOR << 16) | YI_MINOR;
+    *version = YI_VERSION_INT(YI_MAJOR, YI_MINOR);
     return YI_SUCCESS;
 }
 
@@ -504,6 +504,7 @@ yami_encoder_set_fd_src(void *obj, int fd, int fd_width, int fd_height,
     unsigned long fd_handle;
     VAStatus va_status;
     VASurfaceID surface;
+    int fourcc;
 
     enc = (struct yami_inf_enc_priv *) obj;
     fd_handle = (unsigned long) fd;
@@ -535,20 +536,20 @@ yami_encoder_set_fd_src(void *obj, int fd, int fd_width, int fd_height,
             va_status = vaCreateSurfaces(g_va_display, VA_RT_FORMAT_YUV420,
                                          fd_width, fd_height, &surface, 1,
                                          attribs, 2);
-            enc->fd_yami_fourcc = YAMI_FOURCC_NV12;
+            fourcc = YAMI_FOURCC_NV12;
             break;
         case YI_YUY2:
             external.pixel_format = VA_FOURCC_YUY2;
             va_status = vaCreateSurfaces(g_va_display, VA_RT_FORMAT_YUV422,
                                          fd_width, fd_height, &surface, 1,
                                          attribs, 2);
-            enc->fd_yami_fourcc = YAMI_FOURCC_YUY2;
+            fourcc = YAMI_FOURCC_YUY2;
             break;
         default:
             va_status = vaCreateSurfaces(g_va_display, VA_RT_FORMAT_RGB32,
                                          fd_width, fd_height, &surface, 1,
                                          attribs, 2);
-            enc->fd_yami_fourcc = YAMI_FOURCC_RGBX;
+            fourcc = YAMI_FOURCC_RGBX;
             break;
     }
     if (va_status != VA_STATUS_SUCCESS)
@@ -560,6 +561,7 @@ yami_encoder_set_fd_src(void *obj, int fd, int fd_width, int fd_height,
         vaDestroySurfaces(g_va_display, enc->fd_va_surface, 1);
     }
     enc->fd_va_surface[0] = surface;
+    enc->fd_yami_fourcc = fourcc;
     return YI_SUCCESS;
 }
 
@@ -1224,33 +1226,37 @@ yami_surface_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
 
 /*****************************************************************************/
 int
-yami_get_funcs(struct yami_funcs *funcs)
+yami_get_funcs(struct yami_funcs *funcs, int version)
 {
-    funcs->yami_get_version = yami_get_version;
-    funcs->yami_init = yami_init;
-    funcs->yami_deinit = yami_deinit;
-    /* encoder */
-    funcs->yami_encoder_create = yami_encoder_create;
-    funcs->yami_encoder_delete = yami_encoder_delete;
-    funcs->yami_encoder_get_width = yami_encoder_get_width;
-    funcs->yami_encoder_get_height = yami_encoder_get_height;
-    funcs->yami_encoder_resize = yami_encoder_resize;
-    funcs->yami_encoder_get_ybuffer = yami_encoder_get_ybuffer;
-    funcs->yami_encoder_get_uvbuffer = yami_encoder_get_uvbuffer;
-    funcs->yami_encoder_set_fd_src = yami_encoder_set_fd_src;
-    funcs->yami_encoder_encode = yami_encoder_encode;
-    /* decoder */
-    funcs->yami_decoder_create = yami_decoder_create;
-    funcs->yami_decoder_delete = yami_decoder_delete;
-    funcs->yami_decoder_decode = yami_decoder_decode;
-    funcs->yami_decoder_get_pixmap = yami_decoder_get_pixmap;
-    funcs->yami_decoder_get_fd_dst = yami_decoder_get_fd_dst;
-    /* surface */
-    funcs->yami_surface_create = yami_surface_create;
-    funcs->yami_surface_delete = yami_surface_delete;
-    funcs->yami_surface_get_ybuffer = yami_surface_get_ybuffer;
-    funcs->yami_surface_get_uvbuffer = yami_surface_get_uvbuffer;
-    funcs->yami_surface_get_fd_dst = yami_surface_get_fd_dst;
-    return YI_SUCCESS;
+    if (version >= YI_VERSION_INT(0, 2))
+    {
+        funcs->yami_get_version = yami_get_version;
+        funcs->yami_init = yami_init;
+        funcs->yami_deinit = yami_deinit;
+        /* encoder */
+        funcs->yami_encoder_create = yami_encoder_create;
+        funcs->yami_encoder_delete = yami_encoder_delete;
+        funcs->yami_encoder_get_width = yami_encoder_get_width;
+        funcs->yami_encoder_get_height = yami_encoder_get_height;
+        funcs->yami_encoder_resize = yami_encoder_resize;
+        funcs->yami_encoder_get_ybuffer = yami_encoder_get_ybuffer;
+        funcs->yami_encoder_get_uvbuffer = yami_encoder_get_uvbuffer;
+        funcs->yami_encoder_set_fd_src = yami_encoder_set_fd_src;
+        funcs->yami_encoder_encode = yami_encoder_encode;
+        /* decoder */
+        funcs->yami_decoder_create = yami_decoder_create;
+        funcs->yami_decoder_delete = yami_decoder_delete;
+        funcs->yami_decoder_decode = yami_decoder_decode;
+        funcs->yami_decoder_get_pixmap = yami_decoder_get_pixmap;
+        funcs->yami_decoder_get_fd_dst = yami_decoder_get_fd_dst;
+        /* surface */
+        funcs->yami_surface_create = yami_surface_create;
+        funcs->yami_surface_delete = yami_surface_delete;
+        funcs->yami_surface_get_ybuffer = yami_surface_get_ybuffer;
+        funcs->yami_surface_get_uvbuffer = yami_surface_get_uvbuffer;
+        funcs->yami_surface_get_fd_dst = yami_surface_get_fd_dst;
+        return YI_SUCCESS;
+    }
+    return YI_ERROR_OTHER;
 }
 

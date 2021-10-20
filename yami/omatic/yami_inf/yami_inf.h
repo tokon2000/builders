@@ -6,6 +6,8 @@
 #define YI_INT64 long long
 #endif
 
+#define YI_VERSION_INT(_major, _minor) (((_major) << 16) | (_minor))
+
 #define YI_MAJOR                        0
 #define YI_MINOR                        2
 
@@ -122,6 +124,7 @@ struct yami_funcs
     int (*yami_get_version)(int *version);
     int (*yami_init)(int type, void *display);
     int (*yami_deinit)(void);
+    size_t pad0[20 - 3];
     /* encoder */
     int (*yami_encoder_create)(void **obj, int width, int height, int type, int flags);
     int (*yami_encoder_delete)(void *obj);
@@ -133,6 +136,7 @@ struct yami_funcs
     int (*yami_encoder_set_fd_src)(void *obj, int fd, int fd_width, int fd_height,
                                    int fd_stride, int fd_size, int fd_bpp);
     int (*yami_encoder_encode)(void *obj, void *cdata, int *cdata_max_bytes);
+    size_t pad1[20 - 9];
     /* decoder */
     int (*yami_decoder_create)(void **obj, int width, int height, int type, int flags);
     int (*yami_decoder_delete)(void *obj);
@@ -144,6 +148,7 @@ struct yami_funcs
     int (*yami_decoder_get_fd_dst)(void *obj, int *fd, int *fd_width, int *fd_height,
                                    int *fd_stride, int *fd_size, int *fd_bpp,
                                    YI_INT64* fd_time);
+    size_t pad2[20 - 6];
     /* surface */
     int (*yami_surface_create)(void **obj, int width, int height, int type, int flags);
     int (*yami_surface_delete)(void *obj);
@@ -151,12 +156,13 @@ struct yami_funcs
     int (*yami_surface_get_uvbuffer)(void *obj, void **uvdata, int *uvdata_stride_bytes);
     int (*yami_surface_get_fd_dst)(void *obj, int *fd, int *fd_width, int *fd_height,
                                    int *fd_stride, int *fd_size, int *fd_bpp);
+    size_t pad3[20 - 5];
 };
 
 typedef int
-(*yami_get_funcs_proc)(struct yami_funcs *funcs);
+(*yami_get_funcs_proc)(struct yami_funcs *funcs, int version);
 int
-yami_get_funcs(struct yami_funcs *funcs);
+yami_get_funcs(struct yami_funcs *funcs, int version);
 
 #ifdef __cplusplus
 }
