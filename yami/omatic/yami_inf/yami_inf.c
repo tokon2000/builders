@@ -845,6 +845,8 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
     void *buf;
     VADRMPRIMESurfaceDescriptor drm_desc;
     YI_INT64 time;
+    VARectangle input_region;
+    VARectangle output_region;
 
     dec = (struct yami_inf_dec_priv *) obj;
     vf = decodeGetOutput(dec->decoder);
@@ -916,9 +918,17 @@ yami_decoder_get_fd_dst(void *obj, int *fd, int *fd_width, int *fd_height,
         vf->free(vf);
         return YI_ERROR_VAMAPBUFFER;
     }
+    memset(&input_region, 0, sizeof(input_region));
+    input_region.width = dec->width;
+    input_region.height = dec->height;
+    memset(&output_region, 0, sizeof(output_region));
+    output_region.width = dec->width;
+    output_region.height = dec->height;
     pipeline_param = (VAProcPipelineParameterBuffer*)buf;
     memset(pipeline_param, 0, sizeof(VAProcPipelineParameterBuffer));
     pipeline_param->surface = vf->surface;
+    pipeline_param->surface_region = &input_region;
+    pipeline_param->output_region = &output_region;
     vaUnmapBuffer(g_va_display, pipeline_buf);
     va_status = vaBeginPicture(g_va_display, dec->surface_ctx, dec->surface);
     if (va_status != VA_STATUS_SUCCESS)
