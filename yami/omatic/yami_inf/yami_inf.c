@@ -567,7 +567,8 @@ yami_encoder_set_fd_src(void *obj, int fd, int fd_width, int fd_height,
 
 /*****************************************************************************/
 int
-yami_encoder_encode(void *obj, void *cdata, int *cdata_max_bytes)
+yami_encoder_encode(void *obj, void *cdata,
+                    int *cdata_max_bytes, int force_key_frame)
 {
     struct yami_inf_enc_priv *enc;
     VAStatus va_status;
@@ -590,6 +591,7 @@ yami_encoder_encode(void *obj, void *cdata, int *cdata_max_bytes)
     memset(&yami_vf, 0, sizeof(yami_vf));
     yami_vf.crop.width = enc->width;
     yami_vf.crop.width = enc->height;
+    yami_vf.flags = force_key_frame ? VIDEO_FRAME_FLAGS_KEY : 0;
     if (enc->fd_va_surface[0] != 0)
     {
         yami_vf.surface = enc->fd_va_surface[0];

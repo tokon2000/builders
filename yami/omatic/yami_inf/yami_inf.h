@@ -88,7 +88,8 @@ int
 yami_encoder_set_fd_src(void *obj, int fd, int fd_width, int fd_height,
                         int fd_stride, int fd_size, int fd_bpp);
 int
-yami_encoder_encode(void *obj, void *cdata, int *cdata_max_bytes);
+yami_encoder_encode(void *obj, void *cdata, 
+                    int *cdata_max_bytes, int force_key_frame);
 
 int
 yami_decoder_create(void **obj, int width, int height, int type, int flags);
@@ -135,7 +136,8 @@ struct yami_funcs
     int (*yami_encoder_get_uvbuffer)(void *obj, void **uvdata, int *uvdata_stride_bytes);
     int (*yami_encoder_set_fd_src)(void *obj, int fd, int fd_width, int fd_height,
                                    int fd_stride, int fd_size, int fd_bpp);
-    int (*yami_encoder_encode)(void *obj, void *cdata, int *cdata_max_bytes);
+    int (*yami_encoder_encode)(void *obj, void *cdata, 
+                               int *cdata_max_bytes, int force_key_frame);
     size_t pad1[20 - 9];
     /* decoder */
     int (*yami_decoder_create)(void **obj, int width, int height, int type, int flags);
