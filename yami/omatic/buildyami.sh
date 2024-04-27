@@ -48,12 +48,12 @@ LIBVA_INTEL_DRIVER_CONFIG="-Ddriverdir=$LIBRARY_INSTALLATION_DIR/dri -Dlibdir=$L
 INTEL_GMMLIB_CONFIG="-DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$INSTALL_PATH -DCMAKE_INSTALL_LIBDIR=$LIBRARY_INSTALLATION_DIR"
 LIBYAMI_CONFIG="--disable-jpegdec --disable-vp8dec --disable-h265dec --enable-capi --disable-x11 --enable-mpeg2dec"
 
-LIBDRM_SRC_NAME="drm-libdrm-2.4.114"
-LIBVA_SRC_NAME="libva-2.16.0"
-LIBVAUTILS_SRC_NAME="libva-utils-2.15.0"
-INTEL_MEDIA_DRIVER_SRC_NAME="intel-media-22.6.2"
+LIBDRM_SRC_NAME="drm-libdrm-2.4.120"
+LIBVA_SRC_NAME="libva-2.21.0"
+LIBVAUTILS_SRC_NAME="libva-utils-2.21.0"
+INTEL_MEDIA_DRIVER_SRC_NAME="intel-media-24.1.5"
 LIBVA_INTEL_DRIVER_SRC_NAME="intel-vaapi-driver-2.4.1"
-INTEL_GMMLIB_SRC_NAME="intel-gmmlib-22.3.1"
+INTEL_GMMLIB_SRC_NAME="intel-gmmlib-22.3.19"
 LIBYAMI_INF_CONFIG=
 
 if test $GOT_PARAM -eq 0
@@ -91,7 +91,7 @@ export NOCONFIGURE=1
 rm -r $INSTALL_PATH/*
 
 rm -f $LIBDRM_SRC_NAME.tar.gz
-wget https://gitlab.freedesktop.org/mesa/drm/-/archive/libdrm-2.4.114/$LIBDRM_SRC_NAME.tar.gz
+wget https://gitlab.freedesktop.org/mesa/drm/-/archive/libdrm-2.4.120/$LIBDRM_SRC_NAME.tar.gz
 if test $? -ne 0
 then
   echo "error downloading $LIBDRM_SRC_NAME.tar.gz"
@@ -100,7 +100,7 @@ fi
 
 rm -f $LIBVA_SRC_NAME.tar.bz2
 rm -f $LIBVA_SRC_NAME.tar
-wget https://github.com/intel/libva/releases/download/2.16.0/$LIBVA_SRC_NAME.tar.bz2
+wget https://github.com/intel/libva/releases/download/2.21.0/$LIBVA_SRC_NAME.tar.bz2
 if test $? -ne 0
 then
   echo "error downloading $LIBVA_SRC_NAME.tar.bz2"
@@ -109,7 +109,7 @@ fi
 
 rm -f $LIBVAUTILS_SRC_NAME.tar.bz2
 rm -f $LIBVAUTILS_SRC_NAME.tar
-wget https://github.com/intel/libva-utils/releases/download/2.15.0/$LIBVAUTILS_SRC_NAME.tar.bz2
+wget https://github.com/intel/libva-utils/releases/download/2.21.0/$LIBVAUTILS_SRC_NAME.tar.bz2
 if test $? -ne 0
 then
   echo "error downloading $LIBVAUTILS_SRC_NAME.tar.bz2"
